@@ -2,6 +2,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { login, selectLoginError } from "../slice/authSlice";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
+import { Link } from "react-router-dom";
 
 const LoginForm = () => {
   const dispatch = useAppDispatch();
@@ -95,6 +96,15 @@ const LoginForm = () => {
         >
           Sign in
         </button>
+
+        <div className="text-center">
+          <Link
+            to="/forgot-password"
+            className="text-sm text-gray-600 underline hover:text-gray-900"
+          >
+            Forgot password?
+          </Link>
+        </div>
       </form>
     </div>
   );
