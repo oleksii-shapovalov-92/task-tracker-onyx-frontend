@@ -2,12 +2,20 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { login, selectLoginError } from "../slice/authSlice";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
+type LoginLocationState = { from?: string };
 
 const LoginForm = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as LoginLocationState | null)?.from;
+  const redirectTo =
+    typeof from === "string" && from.startsWith("/") && !from.startsWith("//")
+      ? from
+      : "/projects";
+
   const loginError = useAppSelector(selectLoginError);
   const formik = useFormik({
     initialValues: {
@@ -26,7 +34,7 @@ const LoginForm = () => {
       const dispatchResult = await dispatch(login(values));
 
       if (login.fulfilled.match(dispatchResult)) {
-        navigate("/projects");
+        navigate(redirectTo, { replace: true });
       }
     },
   });

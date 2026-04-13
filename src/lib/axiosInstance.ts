@@ -1,9 +1,11 @@
 import axios, {
+  AxiosHeaders,
   // AxiosError,
   type AxiosInstance,
   // type AxiosRequestConfig,
   // type AxiosResponse,
 } from "axios";
+import { authAccessToken } from "./authAccessToken";
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: "/api/v1",
@@ -11,6 +13,17 @@ const axiosInstance: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = authAccessToken.get();
+  if (!token) {
+    return config;
+  }
+  const headers = AxiosHeaders.from(config.headers ?? {});
+  headers.setAuthorization(`Bearer ${token}`, true);
+  config.headers = headers;
+  return config;
 });
 
 // interface FailedRequest {

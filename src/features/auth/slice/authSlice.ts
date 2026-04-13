@@ -1,7 +1,52 @@
-import {createAppSlice} from "../../../app/createAppSlice";
-import type {AuthSliceState, Credentials, UserRegistrationDto,} from "../types";
+import { createAppSlice } from "../../../app/createAppSlice";
+import type {
+  AuthSliceState,
+  Credentials,
+  User,
+  UserRegistrationDto,
+} from "../types";
 import * as api from "../services/api";
-import {isAxiosError} from "axios";
+import { isAxiosError } from "axios";
+import { authAccessToken } from "../../../lib/authAccessToken";
+
+const readAccessTokenFromPayload = (payload: unknown): string | undefined => {
+  if (payload == null || typeof payload !== "object") {
+    return undefined;
+  }
+  const p = payload as Record<string, unknown>;
+  if (typeof p.accessToken === "string" && p.accessToken.length > 0) {
+    return p.accessToken;
+  }
+  if (typeof p.access_token === "string" && p.access_token.length > 0) {
+    return p.access_token;
+  }
+  const nested = p.data;
+  if (nested && typeof nested === "object") {
+    const d = nested as Record<string, unknown>;
+    if (typeof d.accessToken === "string" && d.accessToken.length > 0) {
+      return d.accessToken;
+    }
+    if (typeof d.access_token === "string" && d.access_token.length > 0) {
+      return d.access_token;
+    }
+  }
+  return undefined;
+};
+
+const userFromLoginPayload = (payload: unknown): User | undefined => {
+  if (payload == null || typeof payload !== "object") {
+    return undefined;
+  }
+  const data = payload as Record<string, unknown>;
+  const nested = data.user;
+  if (nested && typeof nested === "object") {
+    return api.mapApiUser(nested as Record<string, unknown>);
+  }
+  if (data.id != null && data.email != null) {
+    return api.mapApiUser(data);
+  }
+  return undefined;
+};
 
 const initialState: AuthSliceState = {
   isAuthenticated: false,
@@ -25,16 +70,42 @@ export const authSlice = createAppSlice({
       {
         pending: (state) => {
           state.isAuthenticated = false;
+          state.accessToken = undefined;
+          authAccessToken.set(undefined);
         },
-        fulfilled: (state) => {
+        fulfilled: (state, action) => {
           state.isAuthenticated = true;
           state.loginErrorMessage = undefined;
+          const token = readAccessTokenFromPayload(action.payload);
+          state.accessToken = token;
+          authAccessToken.set(token);
+          const parsed = userFromLoginPayload(action.payload);
+          if (parsed) {
+            state.user = parsed;
+          }
         },
         rejected: (state, action) => {
           state.isAuthenticated = false;
           state.user = undefined;
+          state.accessToken = undefined;
+          authAccessToken.set(undefined);
           console.log(action.error);
           state.loginErrorMessage = action.error.message;
+        },
+      }
+    ),
+
+    loadProfile: create.asyncThunk(
+      async (_, { getState }) => {
+        const auth = (
+          getState() as { auth?: { accessToken?: string } }
+        ).auth;
+        authAccessToken.set(auth?.accessToken);
+        return api.fetchCurrentUser();
+      },
+      {
+        fulfilled: (state, action) => {
+          state.user = action.payload;
         },
       }
     ),
@@ -42,19 +113,28 @@ export const authSlice = createAppSlice({
     register: create.asyncThunk(
       async (dto: UserRegistrationDto) => {
         return api.fetchRegister(dto);
-        // The value we return becomes the `fulfilled` action payload
       },
       {
         pending: (state) => {
           state.isAuthenticated = false;
+          state.accessToken = undefined;
+          authAccessToken.set(undefined);
         },
         fulfilled: (state, action) => {
           state.isAuthenticated = true;
-          state.user = action.payload;
+          const payload = action.payload;
+          if (payload && typeof payload === "object") {
+            const raw = payload as Record<string, unknown>;
+            if (raw.id != null && raw.email != null) {
+              state.user = api.mapApiUser(raw);
+            }
+          }
         },
         rejected: (state) => {
           state.isAuthenticated = false;
           state.user = undefined;
+          state.accessToken = undefined;
+          authAccessToken.set(undefined);
         },
       }
     ),
@@ -70,7 +150,7 @@ export const authSlice = createAppSlice({
 });
 
 // // Action creators are generated for each case reducer function.
-export const { login, register } = authSlice.actions;
+export const { login, register, loadProfile } = authSlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
 export const {
