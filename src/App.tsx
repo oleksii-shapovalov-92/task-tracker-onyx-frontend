@@ -5,6 +5,7 @@ import Layout from "./layouts/Layout";
 import Registration from "./pages/Registration";
 import Login from "./pages/Login";
 import Projects from "./pages/Projects";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/register" element={<Registration />} />
           <Route path="/login" element={<Login />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </Layout>
     </div>
