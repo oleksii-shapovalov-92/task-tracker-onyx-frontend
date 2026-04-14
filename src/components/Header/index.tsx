@@ -36,13 +36,6 @@ export default function Header() {
           >
             Profile
           </Link>
-
-          <Link
-            to="/profile"
-            className="text-sm font-medium text-gray-600 hover:text-black transition-colors"
-          >
-            Profile
-          </Link>
           <Link
             to="/register"
             className="rounded border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-500 hover:text-black transition"
