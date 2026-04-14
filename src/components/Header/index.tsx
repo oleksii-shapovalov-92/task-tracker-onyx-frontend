@@ -29,6 +29,14 @@ export default function Header() {
           >
             Projects
           </Link>
+
+          <Link
+            to="/profile"
+            className="text-sm font-medium text-gray-600 hover:text-black transition-colors"
+          >
+            Profile
+          </Link>
+
           <Link
             to="/profile"
             className="text-sm font-medium text-gray-600 hover:text-black transition-colors"
