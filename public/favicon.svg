@@ -6,9 +6,24 @@
     </linearGradient>
   </defs>
 
-  <!-- прогресс круг -->
-  <circle cx="80" cy="80" r="40" fill="none" stroke="url(#grad)" stroke-width="18" stroke-dasharray="180 80" stroke-linecap="round"></circle>
-
-  <!-- галочка -->
-  <path d="M60 82 L75 95 L100 65" fill="none" stroke="url(#grad)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"></path>
+  <g transform="translate(80 80) scale(1.32) translate(-80 -80)">
+    <circle
+      cx="80"
+      cy="80"
+      r="40"
+      fill="none"
+      stroke="url(#grad)"
+      stroke-width="20"
+      stroke-dasharray="180 80"
+      stroke-linecap="round"
+    ></circle>
+    <path
+      d="M60 82 L75 95 L100 65"
+      fill="none"
+      stroke="url(#grad)"
+      stroke-width="16"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    ></path>
+  </g>
 </svg>

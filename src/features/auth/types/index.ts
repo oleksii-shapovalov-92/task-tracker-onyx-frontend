@@ -13,13 +13,26 @@ export type ROLE = "ROLE_USER" | "ROLE_ADMIN";
 
 export interface User {
   id: number;
-  email: "string";
+  email: string;
   role: ROLE;
+  roles?: ROLE[];
   confirmationResent: boolean;
+  confirmationStatus?: string;
+  displayName?: string;
+  position?: string;
+  department?: string;
+  avatarUrl?: string;
+  bio?: string;
+}
+
+export interface LoginTokenResponse {
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface AuthSliceState {
   isAuthenticated: boolean;
   user?: User;
+  accessToken?: string;
   loginErrorMessage?: string;
 }
