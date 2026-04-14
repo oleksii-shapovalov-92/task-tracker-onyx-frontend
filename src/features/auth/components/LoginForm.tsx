@@ -2,9 +2,12 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { login, selectLoginError } from "../slice/authSlice";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const LoginForm = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const loginError = useAppSelector(selectLoginError);
   const formik = useFormik({
     initialValues: {
@@ -19,10 +22,12 @@ const LoginForm = () => {
         .min(8, "Password must be at least 8 characters")
         .required("Password is required"),
     }),
-    onSubmit: (values) => {
-      dispatch(login(values));
+    onSubmit: async (values) => {
+      const dispatchResult = await dispatch(login(values));
 
-      // см в форме регистрации как сделать редирект в случае успешного выполнения запроса
+      if (login.fulfilled.match(dispatchResult)) {
+        navigate("/projects");
+      }
     },
   });
 
@@ -95,6 +100,15 @@ const LoginForm = () => {
         >
           Sign in
         </button>
+
+        <div className="text-center">
+          <Link
+            to="/forgot-password"
+            className="text-sm text-gray-600 underline hover:text-gray-900"
+          >
+            Forgot password?
+          </Link>
+        </div>
       </form>
     </div>
   );
