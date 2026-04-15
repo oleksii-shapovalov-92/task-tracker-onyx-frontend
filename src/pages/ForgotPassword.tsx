@@ -27,7 +27,7 @@ export default function ForgotPassword() {
           Check your email
         </h1>
         <p className="text-sm text-gray-600 text-center">
-          If the email exists, we sent a password reset link.
+          If the email exists, we sent a password reset link
         </p>
         <div className="text-center">
           <Link
@@ -48,7 +48,7 @@ export default function ForgotPassword() {
           Forgot password
         </h1>
         <p className="text-sm text-gray-500">
-          Enter your email and we’ll send you a reset link.
+          Enter your email and we’ll send you a reset link
         </p>
       </div>
 
