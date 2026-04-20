@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Textarea from "../components/ui/Textarea";
@@ -10,11 +12,21 @@ import {
 } from "../features/auth/slice/authSlice";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 
+const BIO_MAX = 500;
+
 const dash = (value: string | undefined) =>
   value && value.trim().length > 0 ? value : "—";
 
 const cardClass =
   "mx-auto max-w-md space-y-6 p-6 rounded-lg border bg-white shadow-sm mt-10";
+
+const validationSchema = Yup.object({
+  displayName: Yup.string().required("Display name is required"),
+  position: Yup.string().required("Position is required"),
+  department: Yup.string().required("Department is required"),
+  avatarUrl: Yup.string().url("Must be a valid URL").optional(),
+  bio: Yup.string().max(BIO_MAX, `Max ${BIO_MAX} characters`).optional(),
+});
 
 const Profile = () => {
   const location = useLocation();
@@ -23,15 +35,21 @@ const Profile = () => {
   const user = useAppSelector(selectUser);
   const [loadFailed, setLoadFailed] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const emptyForm = {
-    displayName: "",
-    position: "",
-    department: "",
-    avatarUrl: "",
-    bio: "",
-  };
-  const [form, setForm] = useState(emptyForm);
-  const [saved, setSaved] = useState(emptyForm);
+
+  const formik = useFormik({
+    enableReinitialize: true,
+    initialValues: {
+      displayName: user?.displayName ?? "",
+      position: user?.position ?? "",
+      department: user?.department ?? "",
+      avatarUrl: user?.avatarUrl ?? "",
+      bio: user?.bio ?? "",
+    },
+    validationSchema,
+    onSubmit: () => {
+      setIsEditing(false);
+    },
+  });
 
   useEffect(() => {
     if (!isAuthenticated || user) return;
@@ -39,19 +57,6 @@ const Profile = () => {
       .unwrap()
       .catch(() => setLoadFailed(true));
   }, [dispatch, isAuthenticated, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const values = {
-      displayName: user.displayName ?? "",
-      position: user.position ?? "",
-      department: user.department ?? "",
-      avatarUrl: user.avatarUrl ?? "",
-      bio: user.bio ?? "",
-    };
-    setForm(values);
-    setSaved(values);
-  }, [user]);
 
   if (!isAuthenticated) {
     return (
@@ -148,10 +153,8 @@ const Profile = () => {
           <div className="flex gap-2">
             <Button
               size="sm"
-              onClick={() => {
-                setSaved(form);
-                setIsEditing(false);
-              }}
+              onClick={() => formik.handleSubmit()}
+              disabled={!formik.isValid}
             >
               Save
             </Button>
@@ -159,7 +162,7 @@ const Profile = () => {
               variant="ghost"
               size="sm"
               onClick={() => {
-                setForm(saved);
+                formik.resetForm();
                 setIsEditing(false);
               }}
             >
@@ -170,9 +173,9 @@ const Profile = () => {
       </div>
 
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-        {form.avatarUrl ? (
+        {formik.values.avatarUrl ? (
           <img
-            src={form.avatarUrl}
+            src={formik.values.avatarUrl}
             alt=""
             className="h-24 w-24 shrink-0 rounded-full border border-gray-200 object-cover"
           />
@@ -191,14 +194,15 @@ const Profile = () => {
             </p>
             {isEditing ? (
               <Input
-                value={form.displayName}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, displayName: e.target.value }))
-                }
+                name="displayName"
+                value={formik.values.displayName}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="Your name"
+                error={formik.touched.displayName ? formik.errors.displayName : undefined}
               />
             ) : (
-              <p className="text-sm text-gray-900">{dash(form.displayName)}</p>
+              <p className="text-sm text-gray-900">{dash(formik.values.displayName)}</p>
             )}
           </div>
 
@@ -211,14 +215,15 @@ const Profile = () => {
               </p>
               {isEditing ? (
                 <Input
-                  value={form.position}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, position: e.target.value }))
-                  }
+                  name="position"
+                  value={formik.values.position}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="e.g. Developer"
+                  error={formik.touched.position ? formik.errors.position : undefined}
                 />
               ) : (
-                <p className="text-sm text-gray-900">{dash(form.position)}</p>
+                <p className="text-sm text-gray-900">{dash(formik.values.position)}</p>
               )}
             </div>
             <div className="space-y-1 border-b border-gray-100 pb-4 sm:border-0 sm:pb-0">
@@ -227,14 +232,15 @@ const Profile = () => {
               </p>
               {isEditing ? (
                 <Input
-                  value={form.department}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, department: e.target.value }))
-                  }
+                  name="department"
+                  value={formik.values.department}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   placeholder="e.g. Frontend"
+                  error={formik.touched.department ? formik.errors.department : undefined}
                 />
               ) : (
-                <p className="text-sm text-gray-900">{dash(form.department)}</p>
+                <p className="text-sm text-gray-900">{dash(formik.values.department)}</p>
               )}
             </div>
           </div>
@@ -245,28 +251,37 @@ const Profile = () => {
             </p>
             {isEditing ? (
               <Input
-                value={form.avatarUrl}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, avatarUrl: e.target.value }))
-                }
+                name="avatarUrl"
+                value={formik.values.avatarUrl}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                placeholder="https://example.com/photo.jpg"
+                error={formik.touched.avatarUrl ? formik.errors.avatarUrl : undefined}
               />
             ) : null}
           </div>
 
           <div className="space-y-1 border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-            <p className="block text-sm font-medium text-gray-700">Bio</p>
+            <p className="block text-sm font-medium text-gray-700">Short bio</p>
             {isEditing ? (
-              <Textarea
-                rows={4}
-                value={form.bio}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, bio: e.target.value }))
-                }
-                placeholder="Tell something about yourself"
-              />
+              <div className="space-y-1">
+                <Textarea
+                  name="bio"
+                  rows={4}
+                  maxLength={BIO_MAX}
+                  value={formik.values.bio}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Tell us a little about yourself"
+                  error={formik.touched.bio ? formik.errors.bio : undefined}
+                />
+                <p className="text-right text-xs text-gray-400">
+                  {formik.values.bio.length} / {BIO_MAX}
+                </p>
+              </div>
             ) : (
               <p className="text-sm text-gray-900 whitespace-pre-wrap">
-                {dash(form.bio)}
+                {dash(formik.values.bio)}
               </p>
             )}
           </div>
