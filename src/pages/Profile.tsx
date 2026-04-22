@@ -18,7 +18,7 @@ const dash = (value: string | undefined) =>
   value && value.trim().length > 0 ? value : "—";
 
 const cardClass =
-  "mx-auto max-w-md space-y-6 p-6 rounded-lg border bg-white shadow-sm mt-10";
+  "mx-auto mt-10 max-w-md overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm";
 
 const profileValidationSchema = Yup.object({
   displayName: Yup.string().required("Display name is required"),
@@ -85,20 +85,26 @@ const Profile = () => {
   if (!isAuthenticated) {
     return (
       <div className={cardClass}>
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-          <p className="text-sm text-gray-500">
-            Sign in to view your profile information
-          </p>
-        </div>
-        <div className="text-center">
-          <Link
-            to="/login"
-            state={{ from: location.pathname }}
-            className="inline-flex w-full items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-          >
-            Sign in
-          </Link>
+        <div className="h-0.5 w-full" style={{ background: "linear-gradient(90deg, #ff4da6 0%, #7b3fe4 100%)" }} aria-hidden />
+        <div className="space-y-6 p-6">
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+            <p className="text-sm text-gray-500">
+              Sign in to view your profile information
+            </p>
+          </div>
+          <div className="text-center">
+            <Link
+              to="/login"
+              state={{ from: location.pathname }}
+              className="inline-flex w-full items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-400"
+              style={{
+                background: "linear-gradient(135deg, #ff4da6 0%, #7b3fe4 100%)",
+              }}
+            >
+              Sign in
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -107,9 +113,12 @@ const Profile = () => {
   if (!user && !loadFailed) {
     return (
       <div className={cardClass}>
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-          <p className="text-sm text-gray-500">Loading profile…</p>
+        <div className="h-0.5 w-full" style={{ background: "linear-gradient(90deg, #ff4da6 0%, #7b3fe4 100%)" }} aria-hidden />
+        <div className="space-y-6 p-6">
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+            <p className="text-sm text-gray-500">Loading profile…</p>
+          </div>
         </div>
       </div>
     );
@@ -118,18 +127,21 @@ const Profile = () => {
   if (!user && loadFailed) {
     return (
       <div className={cardClass}>
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-          <p className="text-sm text-gray-500">
-            We could not load your profile from the server
-          </p>
-        </div>
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 border border-red-200 text-left">
-          Ensure the backend exposes{" "}
-          <code className="rounded bg-white px-1 py-0.5 text-xs font-mono text-red-900">
-            GET /api/v1/users/me
-          </code>{" "}
-          for authenticated requests, then try again
+        <div className="h-0.5 w-full" style={{ background: "linear-gradient(90deg, #ff4da6 0%, #7b3fe4 100%)" }} aria-hidden />
+        <div className="space-y-6 p-6">
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+            <p className="text-sm text-gray-500">
+              We could not load your profile from the server
+            </p>
+          </div>
+          <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 border border-red-200 text-left">
+            Ensure the backend exposes{" "}
+            <code className="rounded bg-white px-1 py-0.5 text-xs font-mono text-red-900">
+              GET /api/v1/users/me
+            </code>{" "}
+            for authenticated requests, then try again
+          </div>
         </div>
       </div>
     );
@@ -159,43 +171,52 @@ const Profile = () => {
   return (
     <div className="space-y-6">
       <div className={cardClass}>
-        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-            <p className="text-sm text-gray-500">
-              {isEditing ? "Edit mode" : "Your account"}
-            </p>
-          </div>
-          {!isEditing ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setIsEditing(true)}
-            >
-              Edit
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={() => formik.handleSubmit()}
-                disabled={!formik.isValid}
-              >
-                Save
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  formik.resetForm();
-                  setIsEditing(false);
-                }}
-              >
-                Cancel
-              </Button>
+        <div
+          className="h-0.5 w-full"
+          style={{
+            background: "linear-gradient(90deg, #ff4da6 0%, #7b3fe4 100%)",
+          }}
+          aria-hidden
+        />
+        <div className="space-y-6 p-6">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+              <p className="text-sm text-gray-500">
+                {isEditing ? "Edit mode" : "Your account"}
+              </p>
             </div>
-          )}
-        </div>
+
+            {!isEditing ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+              >
+                Edit
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => formik.handleSubmit()}
+                  disabled={!formik.isValid}
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    formik.resetForm();
+                    setIsEditing(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+          </div>
 
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
           {formik.values.avatarUrl ? (
@@ -324,6 +345,7 @@ const Profile = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       <div className={cardClass}>

@@ -5,7 +5,7 @@ type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
 };
 
 const base =
-  "w-full px-3 py-2 text-sm border rounded-md shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-none";
+  "w-full px-3 py-2 text-sm border rounded-md shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-300 focus:border-purple-300 resize-none";
 
 export default function Textarea({ className = "", error, ...props }: Props) {
   return (

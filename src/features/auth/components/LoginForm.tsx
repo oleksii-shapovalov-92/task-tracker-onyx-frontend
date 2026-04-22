@@ -40,7 +40,13 @@ const LoginForm = () => {
   });
 
   return (
-    <div className="mx-auto max-w-sm space-y-6 p-6 rounded-lg border bg-white shadow-sm mt-10">
+    <div className="mx-auto mt-10 max-w-sm overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div
+        className="h-0.5 w-full"
+        style={{ background: "linear-gradient(90deg, #ff4da6 0%, #7b3fe4 100%)" }}
+        aria-hidden
+      />
+      <div className="space-y-6 p-6">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
         <p className="text-sm text-muted-foreground text-gray-500">
@@ -65,7 +71,7 @@ const LoginForm = () => {
             id="email"
             type="email"
             {...formik.getFieldProps("email")}
-            className={`w-full px-3 py-2 text-sm border rounded-md shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring ${
+            className={`w-full px-3 py-2 text-sm border rounded-md shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-300 focus:border-purple-300 ${
               formik.touched.email && formik.errors.email
                 ? "border-red-500 focus:ring-red-500"
                 : "border-input"
@@ -89,7 +95,7 @@ const LoginForm = () => {
             id="password"
             type="password"
             {...formik.getFieldProps("password")}
-            className={`w-full px-3 py-2 text-sm border rounded-md shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring ${
+            className={`w-full px-3 py-2 text-sm border rounded-md shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-300 focus:border-purple-300 ${
               formik.touched.password && formik.errors.password
                 ? "border-red-500 focus:ring-red-500"
                 : "border-input"
@@ -104,7 +110,10 @@ const LoginForm = () => {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+          className="w-full inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-400"
+          style={{
+            background: "linear-gradient(135deg, #ff4da6 0%, #7b3fe4 100%)",
+          }}
         >
           Sign in
         </button>
@@ -118,6 +127,7 @@ const LoginForm = () => {
           </Link>
         </div>
       </form>
+      </div>
     </div>
   );
 };
