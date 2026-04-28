@@ -32,6 +32,7 @@ export interface LoginTokenResponse {
 
 export interface AuthSliceState {
   isAuthenticated: boolean;
+  isAuthChecked: boolean;
   user?: User;
   accessToken?: string;
   loginErrorMessage?: string;

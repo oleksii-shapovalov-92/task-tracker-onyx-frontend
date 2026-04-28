@@ -2,6 +2,7 @@ import axiosInstance from "../../../lib/axiosInstance";
 import type { Credentials, ROLE, User } from "../types";
 
 const LOGIN_PATH = "/auth/login";
+const LOGOUT_PATH = "/auth/logout";
 const REGISTER_PATH = "/users/register";
 const ME_PATH = "/users/me";
 
@@ -52,4 +53,8 @@ export const fetchRegister = async (credentials: Credentials) => {
 export const fetchCurrentUser = async (): Promise<User> => {
   const res = await axiosInstance.get(ME_PATH);
   return mapApiUser(res.data as Record<string, unknown>);
+};
+
+export const fetchLogout = async (): Promise<void> => {
+  await axiosInstance.post(LOGOUT_PATH);
 };
