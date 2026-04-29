@@ -2,11 +2,11 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { register } from "../slice/authSlice";
 import { useAppDispatch } from "../../../app/hooks";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const RegistrationForm = () => {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+  const [successMessage, setSuccessMessage] = useState("");
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -24,8 +24,8 @@ const RegistrationForm = () => {
       console.log("registration");
       const dispatchResult = await dispatch(register(values));
       if (register.fulfilled.match(dispatchResult)) {
-        // if successful, it wiil navigate to login page
-        navigate("/login");
+        setSuccessMessage("Check your email to confirm registration");
+        formik.resetForm();
       }
     },
   });
@@ -38,6 +38,11 @@ const RegistrationForm = () => {
         </h1>
         <p className="text-sm text-muted-foreground text-gray-500">
           Enter your email and password to register
+          {successMessage && (
+              <p className="text-sm font-medium text-green-600">
+                {successMessage}
+              </p>
+          )}
         </p>
       </div>
       <form onSubmit={formik.handleSubmit} className="space-y-4">
