@@ -7,31 +7,6 @@ import type {
 } from "../types";
 import * as api from "../services/api";
 import { isAxiosError } from "axios";
-import { authAccessToken } from "../../../lib/authAccessToken";
-
-const readAccessTokenFromPayload = (payload: unknown): string | undefined => {
-  if (payload == null || typeof payload !== "object") {
-    return undefined;
-  }
-  const p = payload as Record<string, unknown>;
-  if (typeof p.accessToken === "string" && p.accessToken.length > 0) {
-    return p.accessToken;
-  }
-  if (typeof p.access_token === "string" && p.access_token.length > 0) {
-    return p.access_token;
-  }
-  const nested = p.data;
-  if (nested && typeof nested === "object") {
-    const d = nested as Record<string, unknown>;
-    if (typeof d.accessToken === "string" && d.accessToken.length > 0) {
-      return d.accessToken;
-    }
-    if (typeof d.access_token === "string" && d.access_token.length > 0) {
-      return d.access_token;
-    }
-  }
-  return undefined;
-};
 
 const userFromLoginPayload = (payload: unknown): User | undefined => {
   if (payload == null || typeof payload !== "object") {
@@ -50,6 +25,7 @@ const userFromLoginPayload = (payload: unknown): User | undefined => {
 
 const initialState: AuthSliceState = {
   isAuthenticated: false,
+  isAuthChecked: false,
   user: undefined,
 };
 
@@ -62,23 +38,27 @@ export const authSlice = createAppSlice({
         return api.fetchLogin(credentials).catch((err) => {
           if (isAxiosError(err)) {
             throw new Error(
-              err.response?.data?.message || "Internal Server Error"
+              err.response?.data?.message || "Internal Server Error",
             );
           }
+
+          throw err;
         });
       },
       {
         pending: (state) => {
           state.isAuthenticated = false;
+          state.isAuthChecked = true;
+          state.user = undefined;
           state.accessToken = undefined;
-          authAccessToken.set(undefined);
+          state.loginErrorMessage = undefined;
         },
         fulfilled: (state, action) => {
           state.isAuthenticated = true;
+          state.isAuthChecked = true;
           state.loginErrorMessage = undefined;
-          const token = readAccessTokenFromPayload(action.payload);
-          state.accessToken = token;
-          authAccessToken.set(token);
+          state.accessToken = undefined;
+
           const parsed = userFromLoginPayload(action.payload);
           if (parsed) {
             state.user = parsed;
@@ -86,28 +66,33 @@ export const authSlice = createAppSlice({
         },
         rejected: (state, action) => {
           state.isAuthenticated = false;
+          state.isAuthChecked = true;
           state.user = undefined;
           state.accessToken = undefined;
-          authAccessToken.set(undefined);
-          console.log(action.error);
           state.loginErrorMessage = action.error.message;
         },
-      }
+      },
     ),
 
     loadProfile: create.asyncThunk(
-      async (_, { getState }) => {
-        const auth = (
-          getState() as { auth?: { accessToken?: string } }
-        ).auth;
-        authAccessToken.set(auth?.accessToken);
+      async () => {
         return api.fetchCurrentUser();
       },
       {
         fulfilled: (state, action) => {
+          state.isAuthenticated = true;
+          state.isAuthChecked = true;
           state.user = action.payload;
+          state.accessToken = undefined;
+          state.loginErrorMessage = undefined;
         },
-      }
+        rejected: (state) => {
+          state.isAuthenticated = false;
+          state.isAuthChecked = true;
+          state.user = undefined;
+          state.accessToken = undefined;
+        },
+      },
     ),
 
     register: create.asyncThunk(
@@ -117,14 +102,23 @@ export const authSlice = createAppSlice({
       {
         pending: (state) => {
           state.isAuthenticated = false;
+          state.isAuthChecked = true;
+          state.user = undefined;
           state.accessToken = undefined;
-          authAccessToken.set(undefined);
+          state.loginErrorMessage = undefined;
         },
         fulfilled: (state, action) => {
-          state.isAuthenticated = true;
+          state.isAuthenticated = false;
+          state.isAuthChecked = true;
+          state.user = undefined;
+          state.accessToken = undefined;
+          state.loginErrorMessage = undefined;
+
           const payload = action.payload;
+
           if (payload && typeof payload === "object") {
             const raw = payload as Record<string, unknown>;
+
             if (raw.id != null && raw.email != null) {
               state.user = api.mapApiUser(raw);
             }
@@ -132,11 +126,35 @@ export const authSlice = createAppSlice({
         },
         rejected: (state) => {
           state.isAuthenticated = false;
+          state.isAuthChecked = true;
           state.user = undefined;
           state.accessToken = undefined;
-          authAccessToken.set(undefined);
         },
-      }
+      },
+    ),
+
+    logout: create.asyncThunk(
+      async () => {
+        await api.fetchLogout();
+      },
+      {
+        fulfilled: (state) => {
+          state.isAuthenticated = false;
+          state.isAuthChecked = true;
+          state.user = undefined;
+          state.accessToken = undefined;
+          state.loginErrorMessage = undefined;
+        },
+        rejected: (state) => {
+          // Even if backend logout request fails, frontend auth state should be cleared.
+          // User clicked Sign out, so UI must not keep him visually logged in.
+          state.isAuthenticated = false;
+          state.isAuthChecked = true;
+          state.user = undefined;
+          state.accessToken = undefined;
+          state.loginErrorMessage = undefined;
+        },
+      },
     ),
   }),
   // You can define your selectors here. These selectors receive the slice
@@ -146,15 +164,17 @@ export const authSlice = createAppSlice({
     selectUser: (state) => state.user,
     selectRole: (state) => state.user?.role,
     selectLoginError: (state) => state?.loginErrorMessage,
+    selectIsAuthChecked: (state) => state.isAuthChecked,
   },
 });
 
 // // Action creators are generated for each case reducer function.
-export const { login, register, loadProfile } = authSlice.actions;
+export const { login, register, loadProfile, logout } = authSlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
 export const {
   selectIsAuthenticated,
+  selectIsAuthChecked,
   selectUser,
   selectRole,
   selectLoginError,

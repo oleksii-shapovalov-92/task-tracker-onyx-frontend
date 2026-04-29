@@ -1,4 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import {
+  logout,
+  selectIsAuthenticated,
+  selectIsAuthChecked,
+} from "../../features/auth/slice/authSlice";
 
 function OnyxLogo({ size = 28 }: { size?: number }) {
   return (
@@ -40,6 +46,15 @@ function OnyxLogo({ size = 28 }: { size?: number }) {
 }
 
 export default function Header() {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isAuthChecked = useAppSelector(selectIsAuthChecked);
+
+  const handleSignOut = async () => {
+    await dispatch(logout());
+    navigate("/login", { replace: true });
+  };
   return (
     <header
       className="sticky top-0 z-50 w-full backdrop-blur supports-[backdrop-filter]:bg-white/70"
@@ -83,22 +98,39 @@ export default function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            to="/register"
-            className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-gray-300 hover:bg-gray-50 transition"
-          >
-            Sign up
-          </Link>
-          <Link
-            to="/login"
-            className="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
-            style={{
-              background: "linear-gradient(135deg, #ff4da6 0%, #7b3fe4 100%)",
-            }}
-          >
-            Sign in
-          </Link>
+        <div className="flex min-w-[170px] items-center justify-end gap-3">
+          {!isAuthChecked ? null : isAuthenticated ? (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
+              style={{
+                background: "linear-gradient(135deg, #ff4da6 0%, #7b3fe4 100%)",
+              }}
+            >
+              Sign out
+            </button>
+          ) : (
+            <>
+              <Link
+                to="/register"
+                className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-gray-300 hover:bg-gray-50 transition"
+              >
+                Sign up
+              </Link>
+
+              <Link
+                to="/login"
+                className="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #ff4da6 0%, #7b3fe4 100%)",
+                }}
+              >
+                Sign in
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

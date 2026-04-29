@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -8,8 +9,18 @@ import Projects from "./pages/Projects";
 import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import { useAppDispatch } from "./app/hooks";
+import { loadProfile } from "./features/auth/slice/authSlice";
 
 function App() {
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    // On page refresh Redux state is lost.
+    // This request restores auth state using HttpOnly cookies.
+    dispatch(loadProfile());
+  }, [dispatch]);
+
   return (
     <div>
       <nav></nav>

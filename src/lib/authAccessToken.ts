@@ -1,8 +1,9 @@
-let accessToken: string | undefined;
-
 export const authAccessToken = {
-  get: (): string | undefined => accessToken,
-  set: (value: string | undefined): void => {
-    accessToken = value;
+  get: (): undefined => undefined,
+
+  set: (): void => {
+    // Production approach:
+    // Frontend does not store JWT in localStorage, sessionStorage or JS memory.
+    // Backend stores auth tokens in HttpOnly cookies.
   },
 };
