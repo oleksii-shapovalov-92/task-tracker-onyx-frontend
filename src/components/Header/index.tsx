@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import ThemeToggle from "../ThemeToggle";
 import {
   logout,
   selectIsAuthenticated,
@@ -99,6 +100,8 @@ export default function Header() {
         </div>
 
         <div className="flex min-w-[170px] items-center justify-end gap-3">
+          <ThemeToggle />
+
           {!isAuthChecked ? null : isAuthenticated ? (
             <button
               type="button"

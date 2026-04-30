@@ -103,7 +103,7 @@ export default function About() {
         {people.map((p) => (
           <div
             key={p.name}
-            className="group overflow-hidden rounded-2xl border border-gray-200 shadow-sm transition hover:shadow-md"
+            className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-900"
           >
             <div className="relative h-64 w-full overflow-hidden">
               {p.photo ? (
@@ -137,21 +137,12 @@ export default function About() {
                 </div>
               )}
 
-              <span
-                className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold backdrop-blur-sm"
-                style={{ color: "#7b3fe4" }}
-              >
+              <span className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-violet-700 backdrop-blur-sm dark:bg-gray-950/90 dark:text-violet-300">
                 {p.role}
               </span>
             </div>
 
-            <div
-              className="px-5 pb-5 pt-4"
-              style={{
-                background:
-                  "radial-gradient(ellipse at top left, rgba(255,77,166,0.06) 0%, rgba(123,63,228,0.05) 50%, transparent 80%), #ffffff",
-              }}
-            >
+            <div className="border-t border-gray-100 bg-[radial-gradient(ellipse_at_top_left,rgba(255,77,166,0.06)_0%,rgba(123,63,228,0.05)_50%,transparent_80%),#ffffff] px-5 pb-5 pt-4 transition-colors dark:border-gray-700 dark:bg-[radial-gradient(ellipse_at_top_left,rgba(255,77,166,0.08)_0%,rgba(123,63,228,0.10)_50%,transparent_80%),#111827]">
               <div
                 className="mb-3 h-px w-full"
                 style={{
@@ -160,8 +151,12 @@ export default function About() {
                 }}
                 aria-hidden
               />
-              <p className="text-lg font-bold text-gray-900">{p.name}</p>
-              <p className="mt-2 text-sm leading-6 text-gray-600">{p.blurb}</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">
+                {p.name}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+                {p.blurb}
+              </p>
             </div>
           </div>
         ))}
