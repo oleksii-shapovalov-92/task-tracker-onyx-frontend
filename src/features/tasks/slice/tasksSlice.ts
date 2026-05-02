@@ -7,7 +7,7 @@ import type {
   UpdateTaskDto,
 } from "../types";
 import * as api from "../services/api";
-import { isAxiosError } from "axios";
+
 
 const initialState: TasksSliceState = {
   tasks: [],
