@@ -15,13 +15,6 @@ const initialState: TasksSliceState = {
   errorMessage: "",
 };
 
-const getErrorMessage = (err: unknown) => {
-  if (isAxiosError(err)) {
-    return err.response?.data?.message || "Internal Server Error";
-  }
-
-  return "Internal Server Error";
-};
 
 export const tasksSlice = createAppSlice({
   name: "tasks",
