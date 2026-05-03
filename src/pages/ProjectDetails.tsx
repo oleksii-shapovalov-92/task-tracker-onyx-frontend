@@ -1,0 +1,135 @@
+import { useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import {
+  getProjectById,
+  selectIsSelectedProjectLoading,
+  selectSelectedProject,
+  selectSelectedProjectErrorMessage,
+} from "../features/projects/slice/projectsSlice";
+
+export default function ProjectDetails() {
+  const { projectId } = useParams<{ projectId: string }>();
+
+  const dispatch = useAppDispatch();
+
+  const project = useAppSelector(selectSelectedProject);
+  const isLoading = useAppSelector(selectIsSelectedProjectLoading);
+  const errorMessage = useAppSelector(selectSelectedProjectErrorMessage);
+
+  useEffect(() => {
+    if (projectId) {
+      dispatch(getProjectById(projectId));
+    }
+  }, [dispatch, projectId]);
+
+  if (!projectId) {
+    return (
+      <div className="mx-auto mt-10 max-w-2xl rounded-xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+        <h1 className="text-xl font-semibold text-red-700">
+          Invalid project route
+        </h1>
+        <p className="mt-2 text-sm text-red-700">
+          Project id is missing from the URL.
+        </p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto mt-10 max-w-3xl rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+        <p className="text-sm font-medium text-gray-700">Loading project...</p>
+        <p className="mt-2 text-sm text-gray-500">
+          Please wait while we fetch project details.
+        </p>
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="mx-auto mt-10 max-w-3xl rounded-xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+        <h1 className="text-xl font-semibold text-red-700">
+          Failed to load project
+        </h1>
+
+        <p className="mt-2 text-sm text-red-700">{errorMessage}</p>
+
+        <div className="mt-6">
+          <Link
+            to="/projects"
+            className="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
+          >
+            Back to projects
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return null;
+  }
+
+  return (
+    <section className="mx-auto mt-10 max-w-3xl">
+      <Link
+        to="/projects"
+        className="mb-5 inline-flex text-sm font-medium text-purple-700 hover:underline"
+      >
+        ← Back to projects
+      </Link>
+
+      <article className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div
+          className="h-1 w-full"
+          style={{
+            background: "linear-gradient(90deg, #ff4da6 0%, #7b3fe4 100%)",
+          }}
+          aria-hidden
+        />
+
+        <div className="space-y-6 p-6">
+          <div>
+            <p className="text-sm font-medium text-gray-500">Project details</p>
+
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">
+              {project.title}
+            </h1>
+          </div>
+
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+            <h2 className="text-sm font-semibold text-gray-900">Description</h2>
+
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              {project.description}
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-gray-100 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                Project ID
+              </p>
+
+              <p className="mt-2 break-all text-sm text-gray-900">
+                {project.id}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-gray-100 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                Owner
+              </p>
+
+              <p className="mt-2 break-all text-sm text-gray-900">
+                {project.owner?.email || "Not specified"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  );
+}
