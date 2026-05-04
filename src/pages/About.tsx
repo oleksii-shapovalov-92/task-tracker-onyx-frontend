@@ -52,9 +52,9 @@ export default function About() {
     },
     {
       name: "Oleksii Shapovalov",
-      role: "Backend",
+      role: "Full-Stack",
       blurb:
-        "Builds scalable and efficient backend systems that power seamless application performance.",
+        "Develops comprehensive full-stack solutions, combining seamless frontend interactions with highly efficient server-side performance.",
       photo: "/team/oleksii.jpg",
       photoPosition: "center 5%",
     },
