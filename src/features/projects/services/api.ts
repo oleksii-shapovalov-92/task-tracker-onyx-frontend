@@ -1,5 +1,5 @@
 import axiosInstance from "../../../lib/axiosInstance";
-import type { CreateProjectDto, Project } from "../types";
+import type { CreateProjectDto, Project, ProjectTask } from "../types";
 
 // axiosInstance already has baseURL: "/api/v1"
 const PROJECTS_BASE_PATH = "/projects";
@@ -23,6 +23,16 @@ export const fetchCreateProject = async (
   const response = await axiosInstance.post<Project>(
     PROJECTS_BASE_PATH,
     projectDto,
+  );
+
+  return response.data;
+};
+
+export const fetchProjectTasks = async (
+  projectId: string,
+): Promise<ProjectTask[]> => {
+  const response = await axiosInstance.get<ProjectTask[]>(
+    `/tasks/project/${projectId}`,
   );
 
   return response.data;

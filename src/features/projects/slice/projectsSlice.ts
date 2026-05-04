@@ -7,12 +7,16 @@ const initialState: ProjectsSliceState = {
   projects: [],
 
   selectedProject: undefined,
+  selectedProjectTasks: [],
 
   isLoading: false,
   errorMessage: "",
 
   isSelectedProjectLoading: false,
   selectedProjectErrorMessage: "",
+
+  isSelectedProjectTasksLoading: false,
+  selectedProjectTasksErrorMessage: "",
 
   isCreating: false,
   createProjectErrorMessage: "",
@@ -89,6 +93,36 @@ export const projectsSlice = createAppSlice({
       },
     ),
 
+    getProjectTasks: create.asyncThunk(
+      async (projectId: string) => {
+        try {
+          return await api.fetchProjectTasks(projectId);
+        } catch (error) {
+          throw new Error(
+            getErrorMessage(error, "Failed to load project tasks"),
+          );
+        }
+      },
+      {
+        pending: (state) => {
+          state.isSelectedProjectTasksLoading = true;
+          state.selectedProjectTasks = [];
+          state.selectedProjectTasksErrorMessage = "";
+        },
+        fulfilled: (state, action) => {
+          state.isSelectedProjectTasksLoading = false;
+          state.selectedProjectTasks = action.payload;
+          state.selectedProjectTasksErrorMessage = "";
+        },
+        rejected: (state, action) => {
+          state.isSelectedProjectTasksLoading = false;
+          state.selectedProjectTasks = [];
+          state.selectedProjectTasksErrorMessage =
+            action.error.message || "Failed to load project tasks";
+        },
+      },
+    ),
+
     createProject: create.asyncThunk(
       async (dto: CreateProjectDto) => {
         try {
@@ -127,13 +161,23 @@ export const projectsSlice = createAppSlice({
     selectSelectedProjectErrorMessage: (state) =>
       state.selectedProjectErrorMessage,
 
+    selectSelectedProjectTasks: (state) => state.selectedProjectTasks,
+    selectIsSelectedProjectTasksLoading: (state) =>
+      state.isSelectedProjectTasksLoading,
+    selectSelectedProjectTasksErrorMessage: (state) =>
+      state.selectedProjectTasksErrorMessage,
+
     selectIsCreating: (state) => state.isCreating,
     selectCreateProjectErrorMessage: (state) => state.createProjectErrorMessage,
   },
 });
 
-export const { createProject, getAllProjects, getProjectById } =
-  projectsSlice.actions;
+export const {
+  createProject,
+  getAllProjects,
+  getProjectById,
+  getProjectTasks,
+} = projectsSlice.actions;
 
 export const {
   selectProjects,
@@ -144,6 +188,10 @@ export const {
   selectSelectedProject,
   selectIsSelectedProjectLoading,
   selectSelectedProjectErrorMessage,
+
+  selectSelectedProjectTasks,
+  selectIsSelectedProjectTasksLoading,
+  selectSelectedProjectTasksErrorMessage,
 
   selectIsCreating,
   selectCreateProjectErrorMessage,

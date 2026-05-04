@@ -3,9 +3,13 @@ import { Link, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
   getProjectById,
+  getProjectTasks,
   selectIsSelectedProjectLoading,
+  selectIsSelectedProjectTasksLoading,
   selectSelectedProject,
   selectSelectedProjectErrorMessage,
+  selectSelectedProjectTasks,
+  selectSelectedProjectTasksErrorMessage,
 } from "../features/projects/slice/projectsSlice";
 
 export default function ProjectDetails() {
@@ -17,9 +21,16 @@ export default function ProjectDetails() {
   const isLoading = useAppSelector(selectIsSelectedProjectLoading);
   const errorMessage = useAppSelector(selectSelectedProjectErrorMessage);
 
+  const tasks = useAppSelector(selectSelectedProjectTasks);
+  const isTasksLoading = useAppSelector(selectIsSelectedProjectTasksLoading);
+  const tasksErrorMessage = useAppSelector(
+    selectSelectedProjectTasksErrorMessage,
+  );
+
   useEffect(() => {
     if (projectId) {
       dispatch(getProjectById(projectId));
+      dispatch(getProjectTasks(projectId));
     }
   }, [dispatch, projectId]);
 
@@ -73,7 +84,7 @@ export default function ProjectDetails() {
   }
 
   return (
-    <section className="mx-auto mt-10 max-w-3xl">
+    <section className="mx-auto mt-10 max-w-5xl">
       <Link
         to="/projects"
         className="mb-5 inline-flex text-sm font-medium text-purple-700 hover:underline"
@@ -103,7 +114,7 @@ export default function ProjectDetails() {
             <h2 className="text-sm font-semibold text-gray-900">Description</h2>
 
             <p className="mt-2 text-sm leading-6 text-gray-600">
-              {project.description}
+              {project.description || "No description provided."}
             </p>
           </div>
 
@@ -130,6 +141,54 @@ export default function ProjectDetails() {
           </div>
         </div>
       </article>
+
+      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-gray-900">
+              Project tasks
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Tasks connected with this project will be shown here.
+            </p>
+          </div>
+
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+            {tasks.length} task{tasks.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        {isTasksLoading ? (
+          <div className="mt-5 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
+            Loading project tasks...
+          </div>
+        ) : tasksErrorMessage ? (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {tasksErrorMessage}
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="mt-5 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
+            No tasks yet. The page is ready for task cards when tasks are added.
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {tasks.map((task) => (
+              <article
+                key={task.id}
+                className="rounded-lg border border-gray-100 bg-gray-50 p-4"
+              >
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {task.title}
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  {task.description || "No description provided."}
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </section>
   );
 }
