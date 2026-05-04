@@ -2,13 +2,26 @@ export interface Project {
   id: string;
   title: string;
   description: string;
+  owner?: {
+    id: string;
+    email: string;
+  };
 }
 
-// дто без id
-export type CreateProjectDto = Omit<Project, "id">;
+// DTO without id, because backend generates project id
+export type CreateProjectDto = Omit<Project, "id" | "owner">;
 
 export interface ProjectsSliceState {
   projects: Project[];
-  createProjectErrorMessage?: string;
+
+  selectedProject?: Project;
+
   isLoading: boolean;
+  errorMessage?: string;
+
+  isSelectedProjectLoading: boolean;
+  selectedProjectErrorMessage?: string;
+
+  isCreating: boolean;
+  createProjectErrorMessage?: string;
 }

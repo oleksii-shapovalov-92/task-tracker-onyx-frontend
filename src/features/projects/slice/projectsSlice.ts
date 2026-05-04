@@ -1,11 +1,33 @@
+import { isAxiosError } from "axios";
 import { createAppSlice } from "../../../app/createAppSlice";
 import type { CreateProjectDto, ProjectsSliceState } from "../types";
 import * as api from "../services/api";
-import { isAxiosError, type AxiosError } from "axios";
 
 const initialState: ProjectsSliceState = {
   projects: [],
+
+  selectedProject: undefined,
+
   isLoading: false,
+  errorMessage: "",
+
+  isSelectedProjectLoading: false,
+  selectedProjectErrorMessage: "",
+
+  isCreating: false,
+  createProjectErrorMessage: "",
+};
+
+const getErrorMessage = (error: unknown, fallbackMessage: string) => {
+  if (isAxiosError<{ message?: string }>(error)) {
+    return error.response?.data?.message || fallbackMessage;
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallbackMessage;
+  }
+
+  return fallbackMessage;
 };
 
 export const projectsSlice = createAppSlice({
@@ -14,71 +36,115 @@ export const projectsSlice = createAppSlice({
   reducers: (create) => ({
     getAllProjects: create.asyncThunk(
       async () => {
-        return api
-          .fetchProjects()
-          .catch((err: AxiosError<{ message: string }>) => {
-            // раскрываем ошибку от аксиоса и получаем сообщение
-            // бросаем новую ошибку, которая поподет в rejected case
-            throw new Error(err.response?.data?.message);
-          });
+        try {
+          return await api.fetchProjects();
+        } catch (error) {
+          throw new Error(getErrorMessage(error, "Failed to load projects"));
+        }
       },
       {
         pending: (state) => {
           state.isLoading = true;
+          state.errorMessage = "";
         },
         fulfilled: (state, action) => {
           state.isLoading = false;
           state.projects = action.payload;
+          state.errorMessage = "";
         },
         rejected: (state, action) => {
           state.isLoading = false;
           state.projects = [];
-          console.log(action.error);
+          state.errorMessage =
+            action.error.message || "Failed to load projects";
         },
-      }
+      },
+    ),
+
+    getProjectById: create.asyncThunk(
+      async (projectId: string) => {
+        try {
+          return await api.fetchProjectById(projectId);
+        } catch (error) {
+          throw new Error(getErrorMessage(error, "Failed to load project"));
+        }
+      },
+      {
+        pending: (state) => {
+          state.isSelectedProjectLoading = true;
+          state.selectedProject = undefined;
+          state.selectedProjectErrorMessage = "";
+        },
+        fulfilled: (state, action) => {
+          state.isSelectedProjectLoading = false;
+          state.selectedProject = action.payload;
+          state.selectedProjectErrorMessage = "";
+        },
+        rejected: (state, action) => {
+          state.isSelectedProjectLoading = false;
+          state.selectedProject = undefined;
+          state.selectedProjectErrorMessage =
+            action.error.message || "Failed to load project";
+        },
+      },
     ),
 
     createProject: create.asyncThunk(
       async (dto: CreateProjectDto) => {
-        return api.fetchCreateProject(dto).catch((err) => {
-          if (isAxiosError(err)) {
-            throw new Error(
-              err.response?.data?.message || "Internal Server Error"
-            );
-          }
-        });
-        // The value we return becomes the `fulfilled` action payload
+        try {
+          return await api.fetchCreateProject(dto);
+        } catch (error) {
+          throw new Error(getErrorMessage(error, "Failed to create project"));
+        }
       },
       {
         pending: (state) => {
-          // TODO add spinner here
+          state.isCreating = true;
           state.createProjectErrorMessage = "";
         },
         fulfilled: (state, action) => {
+          state.isCreating = false;
           state.projects.push(action.payload);
           state.createProjectErrorMessage = "";
         },
         rejected: (state, action) => {
-          state.createProjectErrorMessage = action.error.message;
+          state.isCreating = false;
+          state.createProjectErrorMessage =
+            action.error.message || "Failed to create project";
         },
-      }
+      },
     ),
   }),
-  // You can define your selectors here. These selectors receive the slice
-  // state as their first argument.
+
   selectors: {
     selectProjects: (state) => state.projects,
+
     selectIsLoading: (state) => state.isLoading,
+    selectErrorMessage: (state) => state.errorMessage,
+
+    selectSelectedProject: (state) => state.selectedProject,
+    selectIsSelectedProjectLoading: (state) => state.isSelectedProjectLoading,
+    selectSelectedProjectErrorMessage: (state) =>
+      state.selectedProjectErrorMessage,
+
+    selectIsCreating: (state) => state.isCreating,
     selectCreateProjectErrorMessage: (state) => state.createProjectErrorMessage,
   },
 });
 
-// // Action creators are generated for each case reducer function.
-export const { createProject, getAllProjects } = projectsSlice.actions;
+export const { createProject, getAllProjects, getProjectById } =
+  projectsSlice.actions;
 
-// Selectors returned by `slice.selectors` take the root state as their first argument.
 export const {
   selectProjects,
+
   selectIsLoading,
+  selectErrorMessage,
+
+  selectSelectedProject,
+  selectIsSelectedProjectLoading,
+  selectSelectedProjectErrorMessage,
+
+  selectIsCreating,
   selectCreateProjectErrorMessage,
 } = projectsSlice.selectors;
