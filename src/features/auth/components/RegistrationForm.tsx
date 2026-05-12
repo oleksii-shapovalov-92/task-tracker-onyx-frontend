@@ -7,6 +7,7 @@ import { useState } from "react";
 const RegistrationForm = () => {
   const dispatch = useAppDispatch();
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -25,7 +26,16 @@ const RegistrationForm = () => {
       const dispatchResult = await dispatch(register(values));
       if (register.fulfilled.match(dispatchResult)) {
         setSuccessMessage("Check your email to confirm registration");
+        setErrorMessage("");
         formik.resetForm();
+      }
+
+      if (register.rejected.match(dispatchResult)) {
+        setSuccessMessage("");
+
+        setErrorMessage(
+            dispatchResult.error.message || "Registration failed"
+        );
       }
     },
   });
@@ -44,12 +54,22 @@ const RegistrationForm = () => {
         </h1>
         <p className="text-sm text-muted-foreground text-gray-500">
           Enter your email and password to register
-          {successMessage && (
-              <p className="text-sm font-medium text-green-600">
-                {successMessage}
-              </p>
-          )}
         </p>
+
+        {successMessage && (
+            <p className="text-sm font-medium text-green-600">
+              {successMessage}
+            </p>
+        )}
+
+        {errorMessage && (
+            <p className="text-sm font-medium text-red-600">
+              {errorMessage}
+            </p>
+        )}
+
+
+
       </div>
       <form onSubmit={formik.handleSubmit} className="space-y-4">
         {/* Email Field */}
