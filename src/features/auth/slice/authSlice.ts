@@ -96,9 +96,17 @@ export const authSlice = createAppSlice({
     ),
 
     register: create.asyncThunk(
-      async (dto: UserRegistrationDto) => {
-        return api.fetchRegister(dto);
-      },
+        async (dto: UserRegistrationDto) => {
+          return api.fetchRegister(dto).catch((err) => {
+            if (isAxiosError(err)) {
+              throw new Error(
+                  err.response?.data?.message || "Registration failed",
+              );
+            }
+
+            throw err;
+          });
+        },
       {
         pending: (state) => {
           state.isAuthenticated = false;
