@@ -11,10 +11,18 @@ import {
   selectSelectedProjectTasks,
   selectSelectedProjectTasksErrorMessage,
 } from "../features/projects/slice/projectsSlice";
+import type { ProjectTaskStatus } from "../features/projects/types";
+
+const taskStatusLabels: Record<ProjectTaskStatus, string> = {
+  TODO: "To Do",
+  IN_PROGRESS: "In Progress",
+  IN_REVIEW: "In Review",
+  BLOCKED: "Blocked",
+  DONE: "Done",
+};
 
 export default function ProjectDetails() {
   const { projectId } = useParams<{ projectId: string }>();
-
   const dispatch = useAppDispatch();
 
   const project = useAppSelector(selectSelectedProject);
@@ -28,10 +36,10 @@ export default function ProjectDetails() {
   );
 
   useEffect(() => {
-    if (projectId) {
-      dispatch(getProjectById(projectId));
-      dispatch(getProjectTasks(projectId));
-    }
+    if (!projectId) return;
+
+    dispatch(getProjectById(projectId));
+    dispatch(getProjectTasks(projectId));
   }, [dispatch, projectId]);
 
   if (!projectId) {
@@ -148,8 +156,9 @@ export default function ProjectDetails() {
             <h2 className="text-xl font-semibold tracking-tight text-gray-900">
               Project tasks
             </h2>
+
             <p className="mt-1 text-sm text-gray-500">
-              Tasks connected with this project will be shown here.
+              Tasks connected with this project are displayed here.
             </p>
           </div>
 
@@ -168,21 +177,31 @@ export default function ProjectDetails() {
           </div>
         ) : tasks.length === 0 ? (
           <div className="mt-5 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
-            No tasks yet. The page is ready for task cards when tasks are added.
+            No tasks yet. Create tasks for this project to see them here.
           </div>
         ) : (
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {tasks.map((task) => (
               <article
                 key={task.id}
-                className="rounded-lg border border-gray-100 bg-gray-50 p-4"
+                className="rounded-lg border border-gray-100 bg-gray-50 p-4 transition hover:border-purple-200 hover:bg-white hover:shadow-sm"
               >
-                <h3 className="text-sm font-semibold text-gray-900">
-                  {task.title}
-                </h3>
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    {task.title}
+                  </h3>
+
+                  <span className="shrink-0 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
+                    {taskStatusLabels[task.status]}
+                  </span>
+                </div>
 
                 <p className="mt-2 text-sm leading-6 text-gray-600">
                   {task.description || "No description provided."}
+                </p>
+
+                <p className="mt-4 break-all text-xs text-gray-400">
+                  ID: {task.id}
                 </p>
               </article>
             ))}

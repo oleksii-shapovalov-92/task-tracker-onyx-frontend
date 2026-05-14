@@ -76,6 +76,7 @@ export default function About() {
       role: "Backend",
       blurb:
         "Focuses on clean code and robust logic to deliver reliable and consistent backend functionality.",
+      photo: "/team/roman.jpg",
     },
   ];
 
