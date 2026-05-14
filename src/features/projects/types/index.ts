@@ -8,10 +8,18 @@ export interface Project {
   };
 }
 
+export type ProjectTaskStatus =
+  | "TODO"
+  | "IN_PROGRESS"
+  | "IN_REVIEW"
+  | "BLOCKED"
+  | "DONE";
+
 export interface ProjectTask {
   id: string;
   title: string;
   description?: string;
+  status: ProjectTaskStatus;
   executors?: Array<{
     id: string;
     email?: string;
