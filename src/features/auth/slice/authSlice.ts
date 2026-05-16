@@ -96,17 +96,30 @@ export const authSlice = createAppSlice({
     ),
 
     register: create.asyncThunk(
-        async (dto: UserRegistrationDto) => {
-          return api.fetchRegister(dto).catch((err) => {
-            if (isAxiosError(err)) {
+      async (dto: UserRegistrationDto) => {
+        return api.fetchRegister(dto).catch((err) => {
+          if (isAxiosError(err)) {
+            const data = err.response?.data;
+
+            const errors = data?.errors;
+
+            if (Array.isArray(errors)) {
+              const emailError = errors.find(
+                (item) => item.field === "email",
+              );
+
               throw new Error(
-                  err.response?.data?.message || "Registration failed",
+                emailError?.messages?.[0] ||
+                "Invalid email address",
               );
             }
 
-            throw err;
-          });
-        },
+            throw new Error(data?.message || "Registration failed");
+          }
+
+          throw err;
+        });
+      },
       {
         pending: (state) => {
           state.isAuthenticated = false;
