@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { removeTask } from "../features/tasks/slice/tasksSlice";
 import {
   getProjectById,
   getProjectTasks,
+  removeProjectTask,
   selectIsSelectedProjectLoading,
   selectIsSelectedProjectTasksLoading,
   selectSelectedProject,
@@ -12,6 +14,7 @@ import {
   selectSelectedProjectTasksErrorMessage,
 } from "../features/projects/slice/projectsSlice";
 import type { ProjectTaskStatus } from "../features/projects/types";
+
 
 const taskStatusLabels: Record<ProjectTaskStatus, string> = {
   TODO: "To Do",
@@ -41,6 +44,20 @@ export default function ProjectDetails() {
     dispatch(getProjectById(projectId));
     dispatch(getProjectTasks(projectId));
   }, [dispatch, projectId]);
+  const handleDeleteTask = async (taskId: string) => {
+    const isConfirmed = window.confirm(
+      "Are you sure you want to delete this task?",
+    );
+
+    if (!isConfirmed) return;
+
+    try {
+      await dispatch(removeTask(taskId));
+      dispatch(removeProjectTask(taskId));
+    } catch (error) {
+      alert("Failed to delete task");
+    }
+  };
 
   if (!projectId) {
     return (
@@ -191,9 +208,19 @@ export default function ProjectDetails() {
                     {task.title}
                   </h3>
 
-                  <span className="shrink-0 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
-                    {taskStatusLabels[task.status]}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="shrink-0 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
+                      {taskStatusLabels[task.status]}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="text-xs font-medium text-red-600 transition hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
 
                 <p className="mt-2 text-sm leading-6 text-gray-600">
