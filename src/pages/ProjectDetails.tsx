@@ -54,7 +54,7 @@ export default function ProjectDetails() {
     try {
       await dispatch(removeTask(taskId));
       dispatch(removeProjectTask(taskId));
-    } catch (error) {
+    } catch {
       alert("Failed to delete task");
     }
   };
