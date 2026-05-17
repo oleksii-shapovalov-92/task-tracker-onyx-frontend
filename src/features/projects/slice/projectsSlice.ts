@@ -102,6 +102,7 @@ export const projectsSlice = createAppSlice({
             getErrorMessage(error, "Failed to load project tasks"),
           );
         }
+
       },
       {
         pending: (state) => {
@@ -119,9 +120,16 @@ export const projectsSlice = createAppSlice({
           state.selectedProjectTasks = [];
           state.selectedProjectTasksErrorMessage =
             action.error.message || "Failed to load project tasks";
+
         },
+
       },
     ),
+    removeProjectTask: create.reducer<string>((state, action) => {
+      state.selectedProjectTasks = state.selectedProjectTasks.filter(
+        (task) => task.id !== action.payload,
+      );
+    }),
 
     createProject: create.asyncThunk(
       async (dto: CreateProjectDto) => {
@@ -177,6 +185,7 @@ export const {
   getAllProjects,
   getProjectById,
   getProjectTasks,
+  removeProjectTask,
 } = projectsSlice.actions;
 
 export const {
