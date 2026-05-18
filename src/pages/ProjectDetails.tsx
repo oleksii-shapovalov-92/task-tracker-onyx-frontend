@@ -1,11 +1,17 @@
-import { useEffect } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import Textarea from "../components/ui/Textarea";
 import { removeTask } from "../features/tasks/slice/tasksSlice";
 import {
+  createProjectTask,
   getProjectById,
   getProjectTasks,
   removeProjectTask,
+  selectCreateProjectTaskErrorMessage,
+  selectIsCreatingTask,
   selectIsSelectedProjectLoading,
   selectIsSelectedProjectTasksLoading,
   selectSelectedProject,
@@ -14,7 +20,6 @@ import {
   selectSelectedProjectTasksErrorMessage,
 } from "../features/projects/slice/projectsSlice";
 import type { ProjectTaskStatus } from "../features/projects/types";
-
 
 const taskStatusLabels: Record<ProjectTaskStatus, string> = {
   TODO: "To Do",
@@ -28,6 +33,10 @@ export default function ProjectDetails() {
   const { projectId } = useParams<{ projectId: string }>();
   const dispatch = useAppDispatch();
 
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskTitleError, setTaskTitleError] = useState("");
+
   const project = useAppSelector(selectSelectedProject);
   const isLoading = useAppSelector(selectIsSelectedProjectLoading);
   const errorMessage = useAppSelector(selectSelectedProjectErrorMessage);
@@ -38,12 +47,49 @@ export default function ProjectDetails() {
     selectSelectedProjectTasksErrorMessage,
   );
 
+  const isCreatingTask = useAppSelector(selectIsCreatingTask);
+  const createTaskErrorMessage = useAppSelector(
+    selectCreateProjectTaskErrorMessage,
+  );
+
   useEffect(() => {
     if (!projectId) return;
 
     dispatch(getProjectById(projectId));
     dispatch(getProjectTasks(projectId));
   }, [dispatch, projectId]);
+
+  const handleCreateTask = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!projectId) return;
+
+    const trimmedTitle = taskTitle.trim();
+    const trimmedDescription = taskDescription.trim();
+
+    if (!trimmedTitle) {
+      setTaskTitleError("Task title is required.");
+      return;
+    }
+
+    setTaskTitleError("");
+
+    try {
+      await dispatch(
+        createProjectTask({
+          title: trimmedTitle,
+          description: trimmedDescription || undefined,
+          projectId,
+        }),
+      ).unwrap();
+
+      setTaskTitle("");
+      setTaskDescription("");
+    } catch {
+      // Error is shown from Redux state below the form.
+    }
+  };
+
   const handleDeleteTask = async (taskId: string) => {
     const isConfirmed = window.confirm(
       "Are you sure you want to delete this task?",
@@ -52,7 +98,7 @@ export default function ProjectDetails() {
     if (!isConfirmed) return;
 
     try {
-      await dispatch(removeTask(taskId));
+      await dispatch(removeTask(taskId)).unwrap();
       dispatch(removeProjectTask(taskId));
     } catch {
       alert("Failed to delete task");
@@ -166,6 +212,69 @@ export default function ProjectDetails() {
           </div>
         </div>
       </article>
+
+      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight text-gray-900">
+            Create task
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-500">
+            The created task will be attached to the current project.
+          </p>
+        </div>
+
+        <form onSubmit={handleCreateTask} className="mt-5 space-y-4">
+          <div>
+            <label
+              htmlFor="task-title"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              Title
+            </label>
+
+            <Input
+              id="task-title"
+              value={taskTitle}
+              onChange={(event) => {
+                setTaskTitle(event.target.value);
+                setTaskTitleError("");
+              }}
+              placeholder="Enter task title"
+              error={taskTitleError}
+              disabled={isCreatingTask}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="task-description"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              Description
+            </label>
+
+            <Textarea
+              id="task-description"
+              value={taskDescription}
+              onChange={(event) => setTaskDescription(event.target.value)}
+              placeholder="Enter task description"
+              rows={4}
+              disabled={isCreatingTask}
+            />
+          </div>
+
+          {createTaskErrorMessage && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {createTaskErrorMessage}
+            </div>
+          )}
+
+          <Button type="submit" disabled={isCreatingTask}>
+            {isCreatingTask ? "Creating..." : "Create task"}
+          </Button>
+        </form>
+      </section>
 
       <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
