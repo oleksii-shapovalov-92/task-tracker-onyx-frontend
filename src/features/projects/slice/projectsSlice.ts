@@ -1,6 +1,10 @@
 import { isAxiosError } from "axios";
 import { createAppSlice } from "../../../app/createAppSlice";
-import type { CreateProjectDto, ProjectsSliceState } from "../types";
+import type {
+  CreateProjectDto,
+  CreateProjectTaskDto,
+  ProjectsSliceState,
+} from "../types";
 import * as api from "../services/api";
 
 const initialState: ProjectsSliceState = {
@@ -20,11 +24,28 @@ const initialState: ProjectsSliceState = {
 
   isCreating: false,
   createProjectErrorMessage: "",
+
+  isCreatingTask: false,
+  createProjectTaskErrorMessage: "",
+};
+
+type ApiValidationError = {
+  field: string;
+  messages: string[];
+};
+
+type ApiErrorResponse = {
+  message?: string;
+  errors?: ApiValidationError[];
 };
 
 const getErrorMessage = (error: unknown, fallbackMessage: string) => {
-  if (isAxiosError<{ message?: string }>(error)) {
-    return error.response?.data?.message || fallbackMessage;
+  if (isAxiosError<ApiErrorResponse>(error)) {
+    const validationMessage = error.response?.data.errors
+      ?.map(({ field, messages }) => `${field}: ${messages.join(", ")}`)
+      .join("; ");
+
+    return validationMessage || error.response?.data.message || fallbackMessage;
   }
 
   if (error instanceof Error) {
@@ -102,7 +123,6 @@ export const projectsSlice = createAppSlice({
             getErrorMessage(error, "Failed to load project tasks"),
           );
         }
-
       },
       {
         pending: (state) => {
@@ -120,9 +140,7 @@ export const projectsSlice = createAppSlice({
           state.selectedProjectTasks = [];
           state.selectedProjectTasksErrorMessage =
             action.error.message || "Failed to load project tasks";
-
         },
-
       },
     ),
     removeProjectTask: create.reducer<string>((state, action) => {
@@ -130,6 +148,34 @@ export const projectsSlice = createAppSlice({
         (task) => task.id !== action.payload,
       );
     }),
+
+    createProjectTask: create.asyncThunk(
+      async (dto: CreateProjectTaskDto) => {
+        try {
+          return await api.fetchCreateProjectTask(dto);
+        } catch (error) {
+          throw new Error(
+            getErrorMessage(error, "Failed to create project task"),
+          );
+        }
+      },
+      {
+        pending: (state) => {
+          state.isCreatingTask = true;
+          state.createProjectTaskErrorMessage = "";
+        },
+        fulfilled: (state, action) => {
+          state.isCreatingTask = false;
+          state.selectedProjectTasks.unshift(action.payload);
+          state.createProjectTaskErrorMessage = "";
+        },
+        rejected: (state, action) => {
+          state.isCreatingTask = false;
+          state.createProjectTaskErrorMessage =
+            action.error.message || "Failed to create project task";
+        },
+      },
+    ),
 
     createProject: create.asyncThunk(
       async (dto: CreateProjectDto) => {
@@ -177,11 +223,16 @@ export const projectsSlice = createAppSlice({
 
     selectIsCreating: (state) => state.isCreating,
     selectCreateProjectErrorMessage: (state) => state.createProjectErrorMessage,
+
+    selectIsCreatingTask: (state) => state.isCreatingTask,
+    selectCreateProjectTaskErrorMessage: (state) =>
+      state.createProjectTaskErrorMessage,
   },
 });
 
 export const {
   createProject,
+  createProjectTask,
   getAllProjects,
   getProjectById,
   getProjectTasks,
@@ -204,4 +255,7 @@ export const {
 
   selectIsCreating,
   selectCreateProjectErrorMessage,
+
+  selectIsCreatingTask,
+  selectCreateProjectTaskErrorMessage,
 } = projectsSlice.selectors;
