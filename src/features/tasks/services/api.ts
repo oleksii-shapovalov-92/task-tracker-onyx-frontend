@@ -14,7 +14,7 @@ export const createTask = async (dto: CreateTaskDto) => {
 };
 
 export const updateTask = async (taskId: string, dto: UpdateTaskDto) => {
-  const res = await axiosInstance.put(`${TASKS_BASE_PATH}/${taskId}`, dto);
+  const res = await axiosInstance.patch(`${TASKS_BASE_PATH}/${taskId}`, dto);
   return res.data;
 };
 
