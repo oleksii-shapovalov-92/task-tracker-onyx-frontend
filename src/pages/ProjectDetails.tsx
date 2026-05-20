@@ -4,7 +4,10 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Textarea from "../components/ui/Textarea";
-import { removeTask } from "../features/tasks/slice/tasksSlice";
+import {
+  editTask,
+  removeTask,
+} from "../features/tasks/slice/tasksSlice";
 import {
   createProjectTask,
   getProjectById,
@@ -36,6 +39,10 @@ export default function ProjectDetails() {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [taskTitleError, setTaskTitleError] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editTaskTitle, setEditTaskTitle] = useState("");
+  const [editTaskDescription, setEditTaskDescription] = useState("");
+  const [editTaskError, setEditTaskError] = useState("");
 
   const project = useAppSelector(selectSelectedProject);
   const isLoading = useAppSelector(selectIsSelectedProjectLoading);
@@ -87,6 +94,59 @@ export default function ProjectDetails() {
       setTaskDescription("");
     } catch {
       // Error is shown from Redux state below the form.
+    }
+  };
+  const handleOpenEditModal = (
+    taskId: string,
+    title: string,
+    description?: string,
+  ) => {
+    setEditingTaskId(taskId);
+    setEditTaskTitle(title);
+    setEditTaskDescription(description || "");
+    setEditTaskError("");
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingTaskId(null);
+    setEditTaskTitle("");
+    setEditTaskDescription("");
+    setEditTaskError("");
+  };
+
+  const handleEditTask = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!editingTaskId) return;
+
+    const trimmedTitle = editTaskTitle.trim();
+    const trimmedDescription = editTaskDescription.trim();
+
+    if (!trimmedTitle) {
+      setEditTaskError("Task title is required.");
+      return;
+    }
+
+    try {
+      await dispatch(
+        editTask({
+          taskId: editingTaskId,
+          dto: {
+            title: trimmedTitle,
+            description: trimmedDescription,
+          },
+        }),
+      ).unwrap();
+
+      if (projectId) {
+        dispatch(getProjectTasks(projectId));
+      }
+
+      handleCloseEditModal();
+
+      handleCloseEditModal();
+    } catch {
+      setEditTaskError("Failed to update task.");
     }
   };
 
@@ -321,6 +381,19 @@ export default function ProjectDetails() {
                     <span className="shrink-0 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
                       {taskStatusLabels[task.status]}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleOpenEditModal(
+                          task.id,
+                          task.title,
+                          task.description,
+                        )
+                      }
+                      className="text-xs font-medium text-purple-600 transition hover:text-purple-700"
+                    >
+                      Edit
+                    </button>
 
                     <button
                       type="button"
@@ -344,6 +417,67 @@ export default function ProjectDetails() {
           </div>
         )}
       </section>
+      {editingTaskId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Edit task
+            </h2>
+
+            <form onSubmit={handleEditTask} className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Title
+                </label>
+
+                <Input
+                  value={editTaskTitle}
+                  onChange={(event) => {
+                    setEditTaskTitle(event.target.value);
+                    setEditTaskError("");
+                  }}
+                  placeholder="Enter task title"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Description
+                </label>
+
+                <Textarea
+                  value={editTaskDescription}
+                  onChange={(event) =>
+                    setEditTaskDescription(event.target.value)
+                  }
+                  rows={4}
+                  placeholder="Enter task description"
+                />
+              </div>
+
+              {editTaskError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {editTaskError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleCloseEditModal}
+                  className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+
+                <Button type="submit">
+                  Save changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
