@@ -4,6 +4,7 @@ import type {
   CreateProjectTaskDto,
   Project,
   ProjectTask,
+  ProjectTaskStatus,
 } from "../types";
 
 // axiosInstance already has baseURL: "/api/v1"
@@ -47,6 +48,18 @@ export const fetchCreateProjectTask = async (
   taskDto: CreateProjectTaskDto,
 ): Promise<ProjectTask> => {
   const response = await axiosInstance.post<ProjectTask>("/tasks", taskDto);
+
+  return response.data;
+};
+
+export const fetchUpdateProjectTaskStatus = async (
+  taskId: string,
+  status: ProjectTaskStatus
+): Promise<ProjectTask> => {
+  const response = await axiosInstance.patch<ProjectTask>(
+    `/tasks/${taskId}/status`,
+    { status }
+  );
 
   return response.data;
 };

@@ -4,10 +4,7 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Textarea from "../components/ui/Textarea";
-import {
-  editTask,
-  removeTask,
-} from "../features/tasks/slice/tasksSlice";
+import { editTask, removeTask } from "../features/tasks/slice/tasksSlice";
 import {
   createProjectTask,
   getProjectById,
@@ -21,6 +18,9 @@ import {
   selectSelectedProjectErrorMessage,
   selectSelectedProjectTasks,
   selectSelectedProjectTasksErrorMessage,
+  updateProjectTaskStatus,
+  selectIsUpdatingTaskStatus,
+  selectUpdateTaskStatusErrorMessage,
 } from "../features/projects/slice/projectsSlice";
 import type { ProjectTaskStatus } from "../features/projects/types";
 
@@ -31,6 +31,14 @@ const taskStatusLabels: Record<ProjectTaskStatus, string> = {
   BLOCKED: "Blocked",
   DONE: "Done",
 };
+
+const taskStatusColumns: ProjectTaskStatus[] = [
+  "TODO",
+  "IN_PROGRESS",
+  "IN_REVIEW",
+  "BLOCKED",
+  "DONE",
+];
 
 export default function ProjectDetails() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -43,6 +51,9 @@ export default function ProjectDetails() {
   const [editTaskTitle, setEditTaskTitle] = useState("");
   const [editTaskDescription, setEditTaskDescription] = useState("");
   const [editTaskError, setEditTaskError] = useState("");
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverStatus, setDragOverStatus] =
+    useState<ProjectTaskStatus | null>(null);
 
   const project = useAppSelector(selectSelectedProject);
   const isLoading = useAppSelector(selectIsSelectedProjectLoading);
@@ -57,6 +68,11 @@ export default function ProjectDetails() {
   const isCreatingTask = useAppSelector(selectIsCreatingTask);
   const createTaskErrorMessage = useAppSelector(
     selectCreateProjectTaskErrorMessage,
+  );
+
+  const isUpdatingTaskStatus = useAppSelector(selectIsUpdatingTaskStatus);
+  const updateTaskStatusErrorMessage = useAppSelector(
+    selectUpdateTaskStatusErrorMessage,
   );
 
   useEffect(() => {
@@ -147,6 +163,28 @@ export default function ProjectDetails() {
       handleCloseEditModal();
     } catch {
       setEditTaskError("Failed to update task.");
+    }
+  };
+
+  const handleTaskDrop = async (targetStatus: ProjectTaskStatus) => {
+    if (!draggedTaskId) return;
+
+    const draggedTask = tasks.find((task) => task.id === draggedTaskId);
+
+    setDraggedTaskId(null);
+    setDragOverStatus(null);
+
+    if (!draggedTask || draggedTask.status === targetStatus) return;
+
+    try {
+      await dispatch(
+        updateProjectTaskStatus({
+          taskId: draggedTask.id,
+          status: targetStatus,
+        }),
+      ).unwrap();
+    } catch {
+      // Redux error message will be shown in the UI.
     }
   };
 
@@ -366,63 +404,122 @@ export default function ProjectDetails() {
             No tasks yet. Create tasks for this project to see them here.
           </div>
         ) : (
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {tasks.map((task) => (
-              <article
-                key={task.id}
-                className="rounded-lg border border-gray-100 bg-gray-50 p-4 transition hover:border-purple-200 hover:bg-white hover:shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-sm font-semibold text-gray-900">
-                    {task.title}
-                  </h3>
+          <div className="mt-5 space-y-4">
+            {updateTaskStatusErrorMessage && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {updateTaskStatusErrorMessage}
+              </div>
+            )}
 
-                  <div className="flex items-center gap-2">
-                    <span className="shrink-0 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
-                      {taskStatusLabels[task.status]}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleOpenEditModal(
-                          task.id,
-                          task.title,
-                          task.description,
-                        )
-                      }
-                      className="text-xs font-medium text-purple-600 transition hover:text-purple-700"
+            {isUpdatingTaskStatus && (
+              <div className="rounded-lg border border-purple-100 bg-purple-50 p-3 text-sm text-purple-700">
+                Updating task status...
+              </div>
+            )}
+
+            <div className="overflow-x-auto pb-2">
+              <div className="grid min-w-[1100px] grid-cols-5 gap-4">
+                {taskStatusColumns.map((status) => {
+                  const columnTasks = tasks.filter(
+                    (task) => task.status === status,
+                  );
+                  const isDragOver = dragOverStatus === status;
+
+                  return (
+                    <section
+                      key={status}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setDragOverStatus(status);
+                      }}
+                      onDragLeave={() => setDragOverStatus(null)}
+                      onDrop={() => handleTaskDrop(status)}
+                      className={`min-h-[260px] rounded-xl border p-3 transition ${
+                        isDragOver
+                          ? "border-purple-300 bg-purple-50"
+                          : "border-gray-200 bg-gray-50"
+                      }`}
                     >
-                      Edit
-                    </button>
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          {taskStatusLabels[status]}
+                        </h3>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteTask(task.id)}
-                      className="text-xs font-medium text-red-600 transition hover:text-red-700"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-500">
+                          {columnTasks.length}
+                        </span>
+                      </div>
 
-                <p className="mt-2 text-sm leading-6 text-gray-600">
-                  {task.description || "No description provided."}
-                </p>
+                      {columnTasks.length === 0 ? (
+                        <div className="flex min-h-[170px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white/70 p-4 text-center text-sm text-gray-400">
+                          Drop tasks here
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {columnTasks.map((task) => (
+                            <article
+                              key={task.id}
+                              draggable
+                              onDragStart={() => setDraggedTaskId(task.id)}
+                              onDragEnd={() => {
+                                setDraggedTaskId(null);
+                                setDragOverStatus(null);
+                              }}
+                              className="cursor-grab rounded-lg border border-gray-100 bg-white p-4 shadow-sm transition hover:border-purple-200 hover:shadow-md active:cursor-grabbing"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <h4 className="text-sm font-semibold text-gray-900">
+                                  {task.title}
+                                </h4>
 
-                <p className="mt-4 break-all text-xs text-gray-400">
-                  ID: {task.id}
-                </p>
-              </article>
-            ))}
+                                <div className="flex shrink-0 items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleOpenEditModal(
+                                        task.id,
+                                        task.title,
+                                        task.description,
+                                      )
+                                    }
+                                    className="text-xs font-medium text-purple-600 transition hover:text-purple-700"
+                                  >
+                                    Edit
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteTask(task.id)}
+                                    className="text-xs font-medium text-red-600 transition hover:text-red-700"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+
+                              <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600">
+                                {task.description || "No description provided."}
+                              </p>
+
+                              <p className="mt-4 break-all text-xs text-gray-400">
+                                ID: {task.id}
+                              </p>
+                            </article>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </section>
       {editingTaskId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Edit task
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900">Edit task</h2>
 
             <form onSubmit={handleEditTask} className="mt-5 space-y-4">
               <div>
@@ -470,9 +567,7 @@ export default function ProjectDetails() {
                   Cancel
                 </button>
 
-                <Button type="submit">
-                  Save changes
-                </Button>
+                <Button type="submit">Save changes</Button>
               </div>
             </form>
           </div>
