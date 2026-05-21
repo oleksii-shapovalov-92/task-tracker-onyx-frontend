@@ -2,6 +2,7 @@ import { createAppSlice } from "../../../app/createAppSlice";
 import type {
   AuthSliceState,
   Credentials,
+  UpdateProfileDto,
   User,
   UserRegistrationDto,
 } from "../types";
@@ -27,6 +28,8 @@ const initialState: AuthSliceState = {
   isAuthenticated: false,
   isAuthChecked: false,
   user: undefined,
+  updateProfileLoading: false,
+  updateProfileErrorMessage: undefined,
 };
 
 export const authSlice = createAppSlice({
@@ -95,6 +98,38 @@ export const authSlice = createAppSlice({
       },
     ),
 
+    updateProfile: create.asyncThunk(
+      async (dto: UpdateProfileDto) => {
+        return api.fetchUpdateProfile(dto).catch((err) => {
+          if (isAxiosError(err)) {
+            throw new Error(
+              err.response?.data?.message || "Failed to update profile",
+            );
+          }
+
+          throw err;
+        });
+      },
+      {
+        pending: (state) => {
+          state.updateProfileLoading = true;
+          state.updateProfileErrorMessage = undefined;
+        },
+        fulfilled: (state, action) => {
+          state.updateProfileLoading = false;
+          state.updateProfileErrorMessage = undefined;
+          state.user = action.payload;
+          state.isAuthenticated = true;
+          state.isAuthChecked = true;
+        },
+        rejected: (state, action) => {
+          state.updateProfileLoading = false;
+          state.updateProfileErrorMessage =
+            action.error.message || "Failed to update profile";
+        },
+      },
+    ),
+
     register: create.asyncThunk(
       async (dto: UserRegistrationDto) => {
         return api.fetchRegister(dto).catch((err) => {
@@ -104,13 +139,10 @@ export const authSlice = createAppSlice({
             const errors = data?.errors;
 
             if (Array.isArray(errors)) {
-              const emailError = errors.find(
-                (item) => item.field === "email",
-              );
+              const emailError = errors.find((item) => item.field === "email");
 
               throw new Error(
-                emailError?.messages?.[0] ||
-                "Invalid email address",
+                emailError?.messages?.[0] || "Invalid email address",
               );
             }
 
@@ -186,11 +218,14 @@ export const authSlice = createAppSlice({
     selectRole: (state) => state.user?.role,
     selectLoginError: (state) => state?.loginErrorMessage,
     selectIsAuthChecked: (state) => state.isAuthChecked,
+    selectUpdateProfileLoading: (state) => state.updateProfileLoading,
+    selectUpdateProfileError: (state) => state.updateProfileErrorMessage,
   },
 });
 
 // // Action creators are generated for each case reducer function.
-export const { login, register, loadProfile, logout } = authSlice.actions;
+export const { login, register, loadProfile, updateProfile, logout } =
+  authSlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
 export const {
@@ -199,4 +234,6 @@ export const {
   selectUser,
   selectRole,
   selectLoginError,
+  selectUpdateProfileLoading,
+  selectUpdateProfileError,
 } = authSlice.selectors;
