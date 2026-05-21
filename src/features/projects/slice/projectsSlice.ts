@@ -3,6 +3,7 @@ import { createAppSlice } from "../../../app/createAppSlice";
 import type {
   CreateProjectDto,
   CreateProjectTaskDto,
+  ProjectTaskStatus,
   ProjectsSliceState,
 } from "../types";
 import * as api from "../services/api";
@@ -24,6 +25,9 @@ const initialState: ProjectsSliceState = {
 
   isCreating: false,
   createProjectErrorMessage: "",
+
+  isUpdatingTaskStatus: false,
+  updateTaskStatusErrorMessage: "",
 
   isCreatingTask: false,
   createProjectTaskErrorMessage: "",
@@ -177,6 +181,41 @@ export const projectsSlice = createAppSlice({
       },
     ),
 
+    updateProjectTaskStatus: create.asyncThunk(
+      async ({
+        taskId,
+        status,
+      }: {
+        taskId: string;
+        status: ProjectTaskStatus;
+      }) => {
+        return api.fetchUpdateProjectTaskStatus(taskId, status);
+      },
+      {
+        pending: (state) => {
+          state.isUpdatingTaskStatus = true;
+          state.updateTaskStatusErrorMessage = "";
+        },
+        fulfilled: (state, action) => {
+          state.isUpdatingTaskStatus = false;
+
+          const updatedTask = action.payload;
+          const index = state.selectedProjectTasks.findIndex(
+            (task) => task.id === updatedTask.id,
+          );
+
+          if (index !== -1) {
+            state.selectedProjectTasks[index] = updatedTask;
+          }
+        },
+        rejected: (state, action) => {
+          state.isUpdatingTaskStatus = false;
+          state.updateTaskStatusErrorMessage =
+            action.error.message || "Failed to update task status.";
+        },
+      },
+    ),
+
     createProject: create.asyncThunk(
       async (dto: CreateProjectDto) => {
         try {
@@ -227,6 +266,10 @@ export const projectsSlice = createAppSlice({
     selectIsCreatingTask: (state) => state.isCreatingTask,
     selectCreateProjectTaskErrorMessage: (state) =>
       state.createProjectTaskErrorMessage,
+
+    selectIsUpdatingTaskStatus: (state) => state.isUpdatingTaskStatus,
+    selectUpdateTaskStatusErrorMessage: (state) =>
+      state.updateTaskStatusErrorMessage,
   },
 });
 
@@ -237,6 +280,7 @@ export const {
   getProjectById,
   getProjectTasks,
   removeProjectTask,
+  updateProjectTaskStatus,
 } = projectsSlice.actions;
 
 export const {
@@ -258,4 +302,7 @@ export const {
 
   selectIsCreatingTask,
   selectCreateProjectTaskErrorMessage,
+
+  selectIsUpdatingTaskStatus,
+  selectUpdateTaskStatusErrorMessage,
 } = projectsSlice.selectors;

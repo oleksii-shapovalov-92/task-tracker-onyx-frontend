@@ -56,4 +56,7 @@ export interface ProjectsSliceState {
 
   isCreatingTask: boolean;
   createProjectTaskErrorMessage?: string;
+
+  isUpdatingTaskStatus: boolean;
+  updateTaskStatusErrorMessage?: string;
 }
