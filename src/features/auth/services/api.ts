@@ -1,5 +1,5 @@
 import axiosInstance from "../../../lib/axiosInstance";
-import type { Credentials, ROLE, User } from "../types";
+import type { Credentials, ROLE, User, UpdateProfileDto } from "../types";
 
 const LOGIN_PATH = "/auth/login";
 const LOGOUT_PATH = "/auth/logout";
@@ -19,7 +19,7 @@ export const mapApiUser = (raw: Record<string, unknown>): User => {
   const role: ROLE =
     typeof roleFromScalar === "string" && isRole(roleFromScalar)
       ? roleFromScalar
-      : roles?.[0] ?? "ROLE_USER";
+      : (roles?.[0] ?? "ROLE_USER");
 
   return {
     id: Number(raw.id),
@@ -31,8 +31,7 @@ export const mapApiUser = (raw: Record<string, unknown>): User => {
       raw.confirmationStatus != null
         ? String(raw.confirmationStatus)
         : undefined,
-    displayName:
-      raw.displayName != null ? String(raw.displayName) : undefined,
+    displayName: raw.displayName != null ? String(raw.displayName) : undefined,
     position: raw.position != null ? String(raw.position) : undefined,
     department: raw.department != null ? String(raw.department) : undefined,
     avatarUrl: raw.avatarUrl != null ? String(raw.avatarUrl) : undefined,
@@ -57,4 +56,11 @@ export const fetchCurrentUser = async (): Promise<User> => {
 
 export const fetchLogout = async (): Promise<void> => {
   await axiosInstance.post(LOGOUT_PATH);
+};
+
+export const fetchUpdateProfile = async (
+  dto: UpdateProfileDto,
+): Promise<User> => {
+  const res = await axiosInstance.patch(ME_PATH, dto);
+  return mapApiUser(res.data as Record<string, unknown>);
 };

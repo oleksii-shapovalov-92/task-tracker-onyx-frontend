@@ -36,4 +36,13 @@ export interface AuthSliceState {
   user?: User;
   accessToken?: string;
   loginErrorMessage?: string;
+  updateProfileLoading?: boolean;
+  updateProfileErrorMessage?: string;
+}
+
+export interface UpdateProfileDto {
+  displayName?: string;
+  position?: string;
+  department?: string;
+  bio?: string;
 }

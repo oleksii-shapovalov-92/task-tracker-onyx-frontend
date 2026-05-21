@@ -8,11 +8,14 @@ import { Link, useLocation } from "react-router-dom";
 import {
   loadProfile,
   selectIsAuthenticated,
+  selectUpdateProfileError,
+  selectUpdateProfileLoading,
   selectUser,
+  updateProfile,
 } from "../features/auth/slice/authSlice";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 
-const BIO_MAX = 500;
+const BIO_MAX = 1000;
 
 const dash = (value: string | undefined) =>
   value && value.trim().length > 0 ? value : "—";
@@ -21,9 +24,9 @@ const cardClass =
   "mx-auto mt-10 max-w-md overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm";
 
 const profileValidationSchema = Yup.object({
-  displayName: Yup.string().required("Display name is required"),
-  position: Yup.string().required("Position is required"),
-  department: Yup.string().required("Department is required"),
+  displayName: Yup.string().max(100, "Max 100 characters").optional(),
+  position: Yup.string().max(100, "Max 100 characters").optional(),
+  department: Yup.string().max(100, "Max 100 characters").optional(),
   avatarUrl: Yup.string().url("Must be a valid URL").optional(),
   bio: Yup.string().max(BIO_MAX, `Max ${BIO_MAX} characters`).optional(),
 });
@@ -46,8 +49,11 @@ const Profile = () => {
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const user = useAppSelector(selectUser);
+  const updateProfileLoading = useAppSelector(selectUpdateProfileLoading);
+  const updateProfileError = useAppSelector(selectUpdateProfileError);
   const [loadFailed, setLoadFailed] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
 
@@ -61,8 +67,24 @@ const Profile = () => {
       bio: user?.bio ?? "",
     },
     validationSchema: profileValidationSchema,
-    onSubmit: () => {
-      setIsEditing(false);
+    onSubmit: async (values) => {
+      setProfileSuccess(false);
+
+      try {
+        await dispatch(
+          updateProfile({
+            displayName: values.displayName.trim(),
+            position: values.position.trim(),
+            department: values.department.trim(),
+            bio: values.bio.trim(),
+          }),
+        ).unwrap();
+
+        setIsEditing(false);
+        setProfileSuccess(true);
+      } catch {
+        setProfileSuccess(false);
+      }
     },
   });
 
@@ -229,7 +251,10 @@ const Profile = () => {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setIsEditing(true)}
+                onClick={() => {
+                  setProfileSuccess(false);
+                  setIsEditing(true);
+                }}
               >
                 Edit
               </Button>
@@ -237,10 +262,12 @@ const Profile = () => {
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={() => formik.handleSubmit()}
-                  disabled={!formik.isValid}
+                  onClick={() => void formik.submitForm()}
+                  disabled={
+                    !formik.isValid || !formik.dirty || updateProfileLoading
+                  }
                 >
-                  Save
+                  {updateProfileLoading ? "Saving..." : "Save"}
                 </Button>
                 <Button
                   variant="ghost"
@@ -248,6 +275,7 @@ const Profile = () => {
                   onClick={() => {
                     formik.resetForm();
                     setIsEditing(false);
+                    setProfileSuccess(false);
                   }}
                 >
                   Cancel
@@ -255,6 +283,18 @@ const Profile = () => {
               </div>
             )}
           </div>
+
+          {profileSuccess && (
+            <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              Profile updated successfully
+            </div>
+          )}
+
+          {updateProfileError && (
+            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {updateProfileError}
+            </div>
+          )}
 
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             {formik.values.avatarUrl ? (
