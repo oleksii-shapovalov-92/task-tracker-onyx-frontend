@@ -38,6 +38,8 @@ export interface AuthSliceState {
   loginErrorMessage?: string;
   updateProfileLoading?: boolean;
   updateProfileErrorMessage?: string;
+  changePasswordLoading?: boolean;
+  changePasswordErrorMessage?: string;
 }
 
 export interface UpdateProfileDto {
@@ -45,4 +47,9 @@ export interface UpdateProfileDto {
   position?: string;
   department?: string;
   bio?: string;
+}
+
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
 }

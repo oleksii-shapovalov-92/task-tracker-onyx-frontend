@@ -1,10 +1,17 @@
 import axiosInstance from "../../../lib/axiosInstance";
-import type { Credentials, ROLE, User, UpdateProfileDto } from "../types";
+import type {
+  ChangePasswordDto,
+  Credentials,
+  ROLE,
+  User,
+  UpdateProfileDto,
+} from "../types";
 
 const LOGIN_PATH = "/auth/login";
 const LOGOUT_PATH = "/auth/logout";
 const REGISTER_PATH = "/users/register";
 const ME_PATH = "/users/me";
+const CHANGE_PASSWORD_PATH = "/users/me/password";
 
 const isRole = (value: unknown): value is ROLE =>
   value === "ROLE_USER" || value === "ROLE_ADMIN";
@@ -63,4 +70,10 @@ export const fetchUpdateProfile = async (
 ): Promise<User> => {
   const res = await axiosInstance.patch(ME_PATH, dto);
   return mapApiUser(res.data as Record<string, unknown>);
+};
+
+export const fetchChangePassword = async (
+  dto: ChangePasswordDto,
+): Promise<void> => {
+  await axiosInstance.patch(CHANGE_PASSWORD_PATH, dto);
 };

@@ -1,6 +1,7 @@
 import { createAppSlice } from "../../../app/createAppSlice";
 import type {
   AuthSliceState,
+  ChangePasswordDto,
   Credentials,
   UpdateProfileDto,
   User,
@@ -24,12 +25,37 @@ const userFromLoginPayload = (payload: unknown): User | undefined => {
   return undefined;
 };
 
+const getApiErrorMessage = (data: unknown, fallback: string): string => {
+  if (!data || typeof data !== "object") {
+    return fallback;
+  }
+
+  const response = data as {
+    message?: unknown;
+    errors?: Array<{ field?: string; messages?: string[] }>;
+  };
+
+  if (typeof response.message === "string" && response.message.trim()) {
+    return response.message;
+  }
+
+  const firstValidationMessage = response.errors?.[0]?.messages?.[0];
+
+  if (firstValidationMessage) {
+    return firstValidationMessage;
+  }
+
+  return fallback;
+};
+
 const initialState: AuthSliceState = {
   isAuthenticated: false,
   isAuthChecked: false,
   user: undefined,
   updateProfileLoading: false,
   updateProfileErrorMessage: undefined,
+  changePasswordLoading: false,
+  changePasswordErrorMessage: undefined,
 };
 
 export const authSlice = createAppSlice({
@@ -130,6 +156,38 @@ export const authSlice = createAppSlice({
       },
     ),
 
+    changePassword: create.asyncThunk(
+      async (dto: ChangePasswordDto) => {
+        return api.fetchChangePassword(dto).catch((err) => {
+          if (isAxiosError(err)) {
+            throw new Error(
+              getApiErrorMessage(
+                err.response?.data,
+                "Failed to change password",
+              ),
+            );
+          }
+
+          throw err;
+        });
+      },
+      {
+        pending: (state) => {
+          state.changePasswordLoading = true;
+          state.changePasswordErrorMessage = undefined;
+        },
+        fulfilled: (state) => {
+          state.changePasswordLoading = false;
+          state.changePasswordErrorMessage = undefined;
+        },
+        rejected: (state, action) => {
+          state.changePasswordLoading = false;
+          state.changePasswordErrorMessage =
+            action.error.message || "Failed to change password";
+        },
+      },
+    ),
+
     register: create.asyncThunk(
       async (dto: UserRegistrationDto) => {
         return api.fetchRegister(dto).catch((err) => {
@@ -220,11 +278,13 @@ export const authSlice = createAppSlice({
     selectIsAuthChecked: (state) => state.isAuthChecked,
     selectUpdateProfileLoading: (state) => state.updateProfileLoading,
     selectUpdateProfileError: (state) => state.updateProfileErrorMessage,
+    selectChangePasswordLoading: (state) => state.changePasswordLoading,
+    selectChangePasswordError: (state) => state.changePasswordErrorMessage,
   },
 });
 
 // // Action creators are generated for each case reducer function.
-export const { login, register, loadProfile, updateProfile, logout } =
+export const { login, register, loadProfile, updateProfile, logout, changePassword } =
   authSlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
@@ -236,4 +296,6 @@ export const {
   selectLoginError,
   selectUpdateProfileLoading,
   selectUpdateProfileError,
+  selectChangePasswordLoading,
+  selectChangePasswordError,
 } = authSlice.selectors;
