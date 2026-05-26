@@ -6,7 +6,10 @@ import Input from "../components/ui/Input";
 import Textarea from "../components/ui/Textarea";
 import { Link, useLocation } from "react-router-dom";
 import {
+  changePassword,
   loadProfile,
+  selectChangePasswordError,
+  selectChangePasswordLoading,
   selectIsAuthenticated,
   selectUpdateProfileError,
   selectUpdateProfileLoading,
@@ -38,6 +41,11 @@ const passwordValidationSchema = Yup.object({
     .matches(/[a-z]/, "Password must contain a lowercase letter")
     .matches(/[A-Z]/, "Password must contain an uppercase letter")
     .matches(/[0-9]/, "Password must contain a number")
+    .matches(/[^\w\s]/, "Password must contain a special character")
+    .matches(
+      /^[A-Za-z\d\p{P}]+$/u,
+      "Password can contain only Latin letters, numbers and special characters",
+    )
     .required("New password is required"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("newPassword")], "Passwords do not match")
@@ -51,6 +59,8 @@ const Profile = () => {
   const user = useAppSelector(selectUser);
   const updateProfileLoading = useAppSelector(selectUpdateProfileLoading);
   const updateProfileError = useAppSelector(selectUpdateProfileError);
+  const changePasswordLoading = useAppSelector(selectChangePasswordLoading);
+  const changePasswordError = useAppSelector(selectChangePasswordError);
   const [loadFailed, setLoadFailed] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
@@ -95,9 +105,22 @@ const Profile = () => {
       confirmPassword: "",
     },
     validationSchema: passwordValidationSchema,
-    onSubmit: (_values, helpers) => {
-      setPasswordSuccess(true);
-      helpers.resetForm();
+    onSubmit: async (values, helpers) => {
+      setPasswordSuccess(false);
+
+      try {
+        await dispatch(
+          changePassword({
+            currentPassword: values.currentPassword,
+            newPassword: values.newPassword,
+          }),
+        ).unwrap();
+
+        helpers.resetForm();
+        setPasswordSuccess(true);
+      } catch {
+        setPasswordSuccess(false);
+      }
     },
   });
 
@@ -106,6 +129,7 @@ const Profile = () => {
     lowercase: /[a-z]/.test(passwordFormik.values.newPassword),
     uppercase: /[A-Z]/.test(passwordFormik.values.newPassword),
     number: /[0-9]/.test(passwordFormik.values.newPassword),
+    specialCharacter: /[^\w\s]/.test(passwordFormik.values.newPassword),
   };
 
   const passwordStrength = Object.values(passwordChecks).filter(Boolean).length;
@@ -476,7 +500,13 @@ const Profile = () => {
           <form onSubmit={passwordFormik.handleSubmit} className="space-y-4">
             {passwordSuccess && (
               <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                Password updated successfully
+                Password changed successfully
+              </div>
+            )}
+
+            {changePasswordError && (
+              <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {changePasswordError}
               </div>
             )}
 
@@ -577,6 +607,13 @@ const Profile = () => {
                   <li className={passwordChecks.number ? "text-green-600" : ""}>
                     Number
                   </li>
+                  <li
+                    className={
+                      passwordChecks.specialCharacter ? "text-green-600" : ""
+                    }
+                  >
+                    Special character
+                  </li>
                 </ul>
               </div>
             </div>
@@ -612,9 +649,13 @@ const Profile = () => {
               <Button
                 type="submit"
                 size="sm"
-                disabled={!passwordFormik.isValid || !passwordFormik.dirty}
+                disabled={
+                  !passwordFormik.isValid ||
+                  !passwordFormik.dirty ||
+                  changePasswordLoading
+                }
               >
-                Update password
+                {changePasswordLoading ? "Saving..." : "Update password"}
               </Button>
 
               <Button
@@ -625,6 +666,7 @@ const Profile = () => {
                   passwordFormik.resetForm();
                   setPasswordSuccess(false);
                 }}
+                disabled={changePasswordLoading}
               >
                 Reset
               </Button>
