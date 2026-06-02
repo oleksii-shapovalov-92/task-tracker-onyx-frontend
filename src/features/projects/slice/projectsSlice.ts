@@ -26,6 +26,9 @@ const initialState: ProjectsSliceState = {
   isCreating: false,
   createProjectErrorMessage: "",
 
+  isDeleting: false,
+  deleteProjectErrorMessage: "",
+
   isUpdatingTaskStatus: false,
   updateTaskStatusErrorMessage: "",
 
@@ -217,6 +220,7 @@ export const projectsSlice = createAppSlice({
     ),
 
     createProject: create.asyncThunk(
+
       async (dto: CreateProjectDto) => {
         try {
           return await api.fetchCreateProject(dto);
@@ -224,6 +228,7 @@ export const projectsSlice = createAppSlice({
           throw new Error(getErrorMessage(error, "Failed to create project"));
         }
       },
+
       {
         pending: (state) => {
           state.isCreating = true;
@@ -241,7 +246,37 @@ export const projectsSlice = createAppSlice({
         },
       },
     ),
+    deleteProject: create.asyncThunk(
+      async (projectId: string) => {
+        try {
+          await api.fetchDeleteProject(projectId);
+          return projectId;
+        } catch (error) {
+          throw new Error(getErrorMessage(error, "Failed to delete project"));
+        }
+      },
+      {
+        pending: (state) => {
+          state.isDeleting = true;
+          state.deleteProjectErrorMessage = "";
+        },
+        fulfilled: (state, action) => {
+          state.isDeleting = false;
+          state.projects = state.projects.filter(
+            (project) => project.id !== action.payload,
+          );
+          state.deleteProjectErrorMessage = "";
+        },
+        rejected: (state, action) => {
+          state.isDeleting = false;
+          state.deleteProjectErrorMessage =
+            action.error.message || "Failed to delete project";
+        },
+      },
+    ),
   }),
+
+
 
   selectors: {
     selectProjects: (state) => state.projects,
@@ -263,6 +298,9 @@ export const projectsSlice = createAppSlice({
     selectIsCreating: (state) => state.isCreating,
     selectCreateProjectErrorMessage: (state) => state.createProjectErrorMessage,
 
+    selectIsDeleting: (state) => state.isDeleting,
+    selectDeleteProjectErrorMessage: (state) => state.deleteProjectErrorMessage,
+
     selectIsCreatingTask: (state) => state.isCreatingTask,
     selectCreateProjectTaskErrorMessage: (state) =>
       state.createProjectTaskErrorMessage,
@@ -276,6 +314,7 @@ export const projectsSlice = createAppSlice({
 export const {
   createProject,
   createProjectTask,
+  deleteProject,
   getAllProjects,
   getProjectById,
   getProjectTasks,
@@ -299,6 +338,9 @@ export const {
 
   selectIsCreating,
   selectCreateProjectErrorMessage,
+
+  selectIsDeleting,
+  selectDeleteProjectErrorMessage,
 
   selectIsCreatingTask,
   selectCreateProjectTaskErrorMessage,

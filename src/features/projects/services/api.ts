@@ -63,3 +63,6 @@ export const fetchUpdateProjectTaskStatus = async (
 
   return response.data;
 };
+export const fetchDeleteProject = async (projectId: string): Promise<void> => {
+  await axiosInstance.delete(`${PROJECTS_BASE_PATH}/${projectId}`);
+};

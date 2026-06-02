@@ -1,11 +1,14 @@
 import { type FormEvent, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Textarea from "../components/ui/Textarea";
 import { editTask, removeTask } from "../features/tasks/slice/tasksSlice";
 import {
+  deleteProject,
+  selectDeleteProjectErrorMessage,
+  selectIsDeleting,
   createProjectTask,
   getProjectById,
   getProjectTasks,
@@ -32,6 +35,7 @@ const taskStatusLabels: Record<ProjectTaskStatus, string> = {
   DONE: "Done",
 };
 
+
 const taskStatusColumns: ProjectTaskStatus[] = [
   "TODO",
   "IN_PROGRESS",
@@ -43,6 +47,7 @@ const taskStatusColumns: ProjectTaskStatus[] = [
 export default function ProjectDetails() {
   const { projectId } = useParams<{ projectId: string }>();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
@@ -73,6 +78,10 @@ export default function ProjectDetails() {
   const isUpdatingTaskStatus = useAppSelector(selectIsUpdatingTaskStatus);
   const updateTaskStatusErrorMessage = useAppSelector(
     selectUpdateTaskStatusErrorMessage,
+  );
+  const isDeleting = useAppSelector(selectIsDeleting);
+  const deleteProjectErrorMessage = useAppSelector(
+    selectDeleteProjectErrorMessage,
   );
 
   useEffect(() => {
@@ -160,7 +169,7 @@ export default function ProjectDetails() {
 
       handleCloseEditModal();
 
-      handleCloseEditModal();
+
     } catch {
       setEditTaskError("Failed to update task.");
     }
@@ -200,6 +209,21 @@ export default function ProjectDetails() {
       dispatch(removeProjectTask(taskId));
     } catch {
       alert("Failed to delete task");
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    const isConfirmed = window.confirm(
+      "Are you sure you want to delete this project?",
+    );
+
+    if (!isConfirmed || !projectId) return;
+
+    try {
+      await dispatch(deleteProject(projectId)).unwrap();
+      navigate("/projects");
+    } catch {
+      // Error is shown from Redux state
     }
   };
 
@@ -271,13 +295,29 @@ export default function ProjectDetails() {
         />
 
         <div className="space-y-6 p-6">
-          <div>
-            <p className="text-sm font-medium text-gray-500">Project details</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Project details</p>
 
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">
-              {project.title}
-            </h1>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">
+                {project.title}
+              </h1>
+            </div>
+
+            <Button
+              type="button"
+              onClick={handleDeleteProject}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete project"}
+            </Button>
           </div>
+
+          {deleteProjectErrorMessage && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {deleteProjectErrorMessage}
+            </div>
+          )}
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
             <h2 className="text-sm font-semibold text-gray-900">Description</h2>
@@ -434,11 +474,10 @@ export default function ProjectDetails() {
                       }}
                       onDragLeave={() => setDragOverStatus(null)}
                       onDrop={() => handleTaskDrop(status)}
-                      className={`min-h-[260px] rounded-xl border p-3 transition ${
-                        isDragOver
-                          ? "border-purple-300 bg-purple-50"
-                          : "border-gray-200 bg-gray-50"
-                      }`}
+                      className={`min-h-[260px] rounded-xl border p-3 transition ${isDragOver
+                        ? "border-purple-300 bg-purple-50"
+                        : "border-gray-200 bg-gray-50"
+                        }`}
                     >
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="text-sm font-semibold text-gray-900">
