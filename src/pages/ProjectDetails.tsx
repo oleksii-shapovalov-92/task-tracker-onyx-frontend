@@ -1,11 +1,14 @@
 import { type FormEvent, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Textarea from "../components/ui/Textarea";
 import { editTask, removeTask } from "../features/tasks/slice/tasksSlice";
 import {
+  deleteProject,
+  selectDeleteProjectErrorMessage,
+  selectIsDeleting,
   createProjectTask,
   getProjectById,
   getProjectTasks,
@@ -35,6 +38,7 @@ const taskStatusLabels: Record<ProjectTaskStatus, string> = {
   DONE: "Done",
 };
 
+
 const taskStatusColumns: ProjectTaskStatus[] = [
   "TODO",
   "IN_PROGRESS",
@@ -46,6 +50,7 @@ const taskStatusColumns: ProjectTaskStatus[] = [
 export default function ProjectDetails() {
   const { projectId } = useParams<{ projectId: string }>();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
@@ -80,6 +85,10 @@ export default function ProjectDetails() {
   const isUpdatingTaskStatus = useAppSelector(selectIsUpdatingTaskStatus);
   const updateTaskStatusErrorMessage = useAppSelector(
     selectUpdateTaskStatusErrorMessage,
+  );
+  const isDeleting = useAppSelector(selectIsDeleting);
+  const deleteProjectErrorMessage = useAppSelector(
+    selectDeleteProjectErrorMessage,
   );
 
   const isUpdatingProject = useAppSelector(selectIsUpdatingProject);
@@ -218,7 +227,6 @@ export default function ProjectDetails() {
       }
 
       handleCloseEditModal();
-
       
     } catch {
       setEditTaskError("Failed to update task.");
@@ -259,6 +267,21 @@ export default function ProjectDetails() {
       dispatch(removeProjectTask(taskId));
     } catch {
       alert("Failed to delete task");
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    const isConfirmed = window.confirm(
+      "Are you sure you want to delete this project?",
+    );
+
+    if (!isConfirmed || !projectId) return;
+
+    try {
+      await dispatch(deleteProject(projectId)).unwrap();
+      navigate("/projects");
+    } catch {
+      // Error is shown from Redux state
     }
   };
 
@@ -341,13 +364,26 @@ export default function ProjectDetails() {
               </h1>
             </div>
 
-            <Button
-              type="button"
-              onClick={handleOpenEditProjectModal}
-            >
-              Edit project
-            </Button>
+            <div className="flex gap-3">
+              <Button type="button" onClick={handleOpenEditProjectModal}>
+                Edit project
+              </Button>
+
+              <Button
+                type="button"
+                onClick={handleDeleteProject}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete project"}
+              </Button>
+            </div>
           </div>
+
+          {deleteProjectErrorMessage && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {deleteProjectErrorMessage}
+            </div>
+          )}
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
             <h2 className="text-sm font-semibold text-gray-900">Description</h2>
