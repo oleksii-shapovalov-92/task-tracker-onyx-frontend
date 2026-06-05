@@ -21,8 +21,11 @@ import {
   selectSelectedProjectErrorMessage,
   selectSelectedProjectTasks,
   selectSelectedProjectTasksErrorMessage,
+  updateProject,
   updateProjectTaskStatus,
+  selectIsUpdatingProject,
   selectIsUpdatingTaskStatus,
+  selectUpdateProjectErrorMessage,
   selectUpdateTaskStatusErrorMessage,
 } from "../features/projects/slice/projectsSlice";
 import type { ProjectTaskStatus } from "../features/projects/types";
@@ -56,6 +59,10 @@ export default function ProjectDetails() {
   const [editTaskTitle, setEditTaskTitle] = useState("");
   const [editTaskDescription, setEditTaskDescription] = useState("");
   const [editTaskError, setEditTaskError] = useState("");
+  const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
+  const [editProjectTitle, setEditProjectTitle] = useState("");
+  const [editProjectDescription, setEditProjectDescription] = useState("");
+  const [editProjectError, setEditProjectError] = useState("");
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] =
     useState<ProjectTaskStatus | null>(null);
@@ -82,6 +89,12 @@ export default function ProjectDetails() {
   const isDeleting = useAppSelector(selectIsDeleting);
   const deleteProjectErrorMessage = useAppSelector(
     selectDeleteProjectErrorMessage,
+  );
+
+  const isUpdatingProject = useAppSelector(selectIsUpdatingProject);
+
+  const updateProjectErrorMessage = useAppSelector(
+    selectUpdateProjectErrorMessage,
   );
 
   useEffect(() => {
@@ -139,6 +152,52 @@ export default function ProjectDetails() {
     setEditTaskError("");
   };
 
+  const handleOpenEditProjectModal = () => {
+    if (!project) return;
+
+    setEditProjectTitle(project.title);
+    setEditProjectDescription(project.description || "");
+    setEditProjectError("");
+    setIsEditProjectModalOpen(true);
+  };
+
+  const handleCloseEditProjectModal = () => {
+    setIsEditProjectModalOpen(false);
+    setEditProjectTitle("");
+    setEditProjectDescription("");
+    setEditProjectError("");
+  };
+
+  const handleEditProject = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!projectId) return;
+
+    const trimmedTitle = editProjectTitle.trim();
+    const trimmedDescription = editProjectDescription.trim();
+
+    if (!trimmedTitle) {
+      setEditProjectError("Project title is required.");
+      return;
+    }
+
+    try {
+      await dispatch(
+        updateProject({
+          projectId,
+          dto: {
+            title: trimmedTitle,
+            description: trimmedDescription,
+          },
+        }),
+      ).unwrap();
+
+      handleCloseEditProjectModal();
+    } catch {
+      setEditProjectError("Failed to update project.");
+    }
+  };
+
   const handleEditTask = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -168,8 +227,7 @@ export default function ProjectDetails() {
       }
 
       handleCloseEditModal();
-
-
+      
     } catch {
       setEditTaskError("Failed to update task.");
     }
@@ -297,21 +355,28 @@ export default function ProjectDetails() {
         <div className="space-y-6 p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Project details</p>
+              <p className="text-sm font-medium text-gray-500">
+                Project details
+              </p>
 
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">
                 {project.title}
               </h1>
             </div>
 
-            <Button
-              type="button"
-              onClick={handleDeleteProject}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Deleting..." : "Delete project"}
-            </Button>
-          </div>
+            <div className="flex gap-3">
+              <Button type="button" onClick={handleOpenEditProjectModal}>
+                Edit project
+              </Button>
+
+              <Button
+                type="button"
+                onClick={handleDeleteProject}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete project"}
+              </Button>
+            </div>
 
           {deleteProjectErrorMessage && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -555,6 +620,67 @@ export default function ProjectDetails() {
           </div>
         )}
       </section>
+
+      {isEditProjectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+            <h2 className="text-xl font-semibold text-gray-900">Edit project</h2>
+
+            <form onSubmit={handleEditProject} className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Title
+                </label>
+
+                <Input
+                  value={editProjectTitle}
+                  onChange={(event) => {
+                    setEditProjectTitle(event.target.value);
+                    setEditProjectError("");
+                  }}
+                  placeholder="Enter project title"
+                  disabled={isUpdatingProject}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Description
+                </label>
+
+                <Textarea
+                  value={editProjectDescription}
+                  onChange={(event) => setEditProjectDescription(event.target.value)}
+                  rows={4}
+                  placeholder="Enter project description"
+                  disabled={isUpdatingProject}
+                />
+              </div>
+
+              {(editProjectError || updateProjectErrorMessage) && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {editProjectError || updateProjectErrorMessage}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleCloseEditProjectModal}
+                  disabled={isUpdatingProject}
+                  className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+
+                <Button type="submit" disabled={isUpdatingProject}>
+                  {isUpdatingProject ? "Saving..." : "Save changes"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {editingTaskId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">

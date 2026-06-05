@@ -30,6 +30,10 @@ export interface ProjectTask {
 // DTO without id, because backend generates project id
 export type CreateProjectDto = Omit<Project, "id" | "owner">;
 
+export type ProjectUpdateDto = Partial<
+  Pick<Project, "title" | "description">
+>;
+
 export interface CreateProjectTaskDto {
   title: string;
   description?: string;
@@ -56,6 +60,9 @@ export interface ProjectsSliceState {
 
   isDeleting: boolean;
   deleteProjectErrorMessage?: string;
+  
+  isUpdatingProject: boolean;
+  updateProjectErrorMessage?: string;
 
   isCreatingTask: boolean;
   createProjectTaskErrorMessage?: string;
