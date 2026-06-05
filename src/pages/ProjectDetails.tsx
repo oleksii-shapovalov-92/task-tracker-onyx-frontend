@@ -377,6 +377,7 @@ export default function ProjectDetails() {
                 {isDeleting ? "Deleting..." : "Delete project"}
               </Button>
             </div>
+          </div>
 
           {deleteProjectErrorMessage && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
