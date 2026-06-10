@@ -11,6 +11,7 @@ const LOGIN_PATH = "/auth/login";
 const LOGOUT_PATH = "/auth/logout";
 const REGISTER_PATH = "/users/register";
 const ME_PATH = "/users/me";
+const AVATAR_PATH = "/users/me/avatar";
 const CHANGE_PASSWORD_PATH = "/users/me/password";
 
 const isRole = (value: unknown): value is ROLE =>
@@ -69,6 +70,19 @@ export const fetchUpdateProfile = async (
   dto: UpdateProfileDto,
 ): Promise<User> => {
   const res = await axiosInstance.patch(ME_PATH, dto);
+  return mapApiUser(res.data as Record<string, unknown>);
+};
+
+export const fetchUploadAvatar = async (file: File): Promise<User> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await axiosInstance.patch(AVATAR_PATH, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
   return mapApiUser(res.data as Record<string, unknown>);
 };
 

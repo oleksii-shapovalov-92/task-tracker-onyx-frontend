@@ -54,6 +54,8 @@ const initialState: AuthSliceState = {
   user: undefined,
   updateProfileLoading: false,
   updateProfileErrorMessage: undefined,
+  avatarUploadLoading: false,
+  avatarUploadErrorMessage: undefined,
   changePasswordLoading: false,
   changePasswordErrorMessage: undefined,
 };
@@ -152,6 +154,36 @@ export const authSlice = createAppSlice({
           state.updateProfileLoading = false;
           state.updateProfileErrorMessage =
             action.error.message || "Failed to update profile";
+        },
+      },
+    ),
+
+    uploadAvatar: create.asyncThunk(
+      async (file: File) => {
+        return api.fetchUploadAvatar(file).catch((err) => {
+          if (isAxiosError(err)) {
+            throw new Error(
+              err.response?.data?.message || "Failed to upload avatar",
+            );
+          }
+
+          throw err;
+        });
+      },
+      {
+        pending: (state) => {
+          state.avatarUploadLoading = true;
+          state.avatarUploadErrorMessage = undefined;
+        },
+        fulfilled: (state, action) => {
+          state.avatarUploadLoading = false;
+          state.avatarUploadErrorMessage = undefined;
+          state.user = action.payload;
+        },
+        rejected: (state, action) => {
+          state.avatarUploadLoading = false;
+          state.avatarUploadErrorMessage =
+            action.error.message || "Failed to upload avatar";
         },
       },
     ),
@@ -277,6 +309,8 @@ export const authSlice = createAppSlice({
     selectLoginError: (state) => state?.loginErrorMessage,
     selectIsAuthChecked: (state) => state.isAuthChecked,
     selectUpdateProfileLoading: (state) => state.updateProfileLoading,
+    selectAvatarUploadLoading: (state) => state.avatarUploadLoading,
+    selectAvatarUploadError: (state) => state.avatarUploadErrorMessage,
     selectUpdateProfileError: (state) => state.updateProfileErrorMessage,
     selectChangePasswordLoading: (state) => state.changePasswordLoading,
     selectChangePasswordError: (state) => state.changePasswordErrorMessage,
@@ -284,9 +318,15 @@ export const authSlice = createAppSlice({
 });
 
 // // Action creators are generated for each case reducer function.
-export const { login, register, loadProfile, updateProfile, logout, changePassword } =
-  authSlice.actions;
-
+export const {
+  login,
+  register,
+  loadProfile,
+  updateProfile,
+  uploadAvatar,
+  logout,
+  changePassword,
+} = authSlice.actions;
 // Selectors returned by `slice.selectors` take the root state as their first argument.
 export const {
   selectIsAuthenticated,
@@ -296,6 +336,8 @@ export const {
   selectLoginError,
   selectUpdateProfileLoading,
   selectUpdateProfileError,
+  selectAvatarUploadLoading,
+  selectAvatarUploadError,
   selectChangePasswordLoading,
   selectChangePasswordError,
 } = authSlice.selectors;

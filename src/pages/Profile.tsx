@@ -8,6 +8,8 @@ import { Link, useLocation } from "react-router-dom";
 import {
   changePassword,
   loadProfile,
+  selectAvatarUploadError,
+  selectAvatarUploadLoading,
   selectChangePasswordError,
   selectChangePasswordLoading,
   selectIsAuthenticated,
@@ -15,6 +17,7 @@ import {
   selectUpdateProfileLoading,
   selectUser,
   updateProfile,
+  uploadAvatar,
 } from "../features/auth/slice/authSlice";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 
@@ -30,7 +33,6 @@ const profileValidationSchema = Yup.object({
   displayName: Yup.string().max(100, "Max 100 characters").optional(),
   position: Yup.string().max(100, "Max 100 characters").optional(),
   department: Yup.string().max(100, "Max 100 characters").optional(),
-  avatarUrl: Yup.string().url("Must be a valid URL").optional(),
   bio: Yup.string().max(BIO_MAX, `Max ${BIO_MAX} characters`).optional(),
 });
 
@@ -66,6 +68,65 @@ const Profile = () => {
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  const [avatarValidationError, setAvatarValidationError] = useState("");
+  const [avatarSuccess, setAvatarSuccess] = useState(false);
+  const handleAvatarSelect = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+
+    setAvatarValidationError("");
+    setAvatarSuccess(false);
+
+    if (!file) {
+      return;
+    }
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setAvatarValidationError(
+        "Only jpg, jpeg, png and webp files are allowed",
+      );
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarValidationError("Maximum file size is 5 MB");
+      return;
+    }
+
+    setSelectedAvatarFile(file);
+    setAvatarPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!selectedAvatarFile) {
+      setAvatarValidationError("Please select a file");
+      return;
+    }
+
+    try {
+      setAvatarValidationError("");
+      setAvatarSuccess(false);
+
+      await dispatch(uploadAvatar(selectedAvatarFile)).unwrap();
+
+      setAvatarSuccess(true);
+      setSelectedAvatarFile(null);
+    } catch {
+      setAvatarSuccess(false);
+    }
+  };
+  const avatarUploadLoading = useAppSelector(selectAvatarUploadLoading);
+  const avatarUploadError = useAppSelector(selectAvatarUploadError);
 
   const formik = useFormik({
     enableReinitialize: true,
@@ -73,7 +134,6 @@ const Profile = () => {
       displayName: user?.displayName ?? "",
       position: user?.position ?? "",
       department: user?.department ?? "",
-      avatarUrl: user?.avatarUrl ?? "",
       bio: user?.bio ?? "",
     },
     validationSchema: profileValidationSchema,
@@ -321,10 +381,10 @@ const Profile = () => {
           )}
 
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-            {formik.values.avatarUrl ? (
+            {avatarPreviewUrl || user.avatarUrl ? (
               <img
-                src={formik.values.avatarUrl}
-                alt=""
+                src={avatarPreviewUrl || user.avatarUrl}
+                alt="Avatar"
                 className="h-24 w-24 shrink-0 rounded-full border border-gray-200 object-cover"
               />
             ) : (
@@ -411,24 +471,51 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div className="space-y-1 border-b border-gray-100 pb-4">
+              <div className="space-y-2 border-b border-gray-100 pb-4">
                 <p className="block text-sm font-medium text-gray-700">
-                  Avatar URL
+                  Profile photo
                 </p>
-                {isEditing ? (
-                  <Input
-                    name="avatarUrl"
-                    value={formik.values.avatarUrl}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    placeholder="https://example.com/photo.jpg"
-                    error={
-                      formik.touched.avatarUrl
-                        ? formik.errors.avatarUrl
-                        : undefined
-                    }
-                  />
-                ) : null}
+
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onChange={handleAvatarSelect}
+                  disabled={avatarUploadLoading}
+                  className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-purple-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-purple-700 hover:file:bg-purple-100"
+                />
+
+                <p className="text-xs text-gray-500">
+                  Allowed formats: jpg, jpeg, png, webp. Max size: 5 MB.
+                </p>
+
+                {selectedAvatarFile && (
+                  <p className="text-xs text-gray-500">
+                    Selected: {selectedAvatarFile.name}
+                  </p>
+                )}
+
+                {selectedAvatarFile && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => void handleAvatarUpload()}
+                    disabled={avatarUploadLoading}
+                  >
+                    {avatarUploadLoading ? "Uploading..." : "Upload avatar"}
+                  </Button>
+                )}
+
+                {(avatarValidationError || avatarUploadError) && (
+                  <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {avatarValidationError || avatarUploadError}
+                  </div>
+                )}
+
+                {avatarSuccess && (
+                  <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                    Avatar uploaded successfully
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1 border-b border-gray-100 pb-4 last:border-0 last:pb-0">
