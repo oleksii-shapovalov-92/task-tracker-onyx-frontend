@@ -38,6 +38,8 @@ export interface AuthSliceState {
   loginErrorMessage?: string;
   updateProfileLoading?: boolean;
   updateProfileErrorMessage?: string;
+  avatarUploadLoading?: boolean;
+  avatarUploadErrorMessage?: string;
   changePasswordLoading?: boolean;
   changePasswordErrorMessage?: string;
 }
